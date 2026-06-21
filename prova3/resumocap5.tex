@@ -1,0 +1,698 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazilian]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{geometry}
+\geometry{a4paper, top=1cm, bottom=1cm, left=1.5cm, right=1.5cm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{tcolorbox}
+\usepackage{tikz}
+\usepackage{microtype}
+\usepackage{hyperref}
+
+\usetikzlibrary{positioning, arrows.meta, fit, backgrounds, calc}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Resumo Capítulo 5 - Plano de Controle},
+    pdfpagemode=FullScreen,
+}
+
+% Definições do tcolorbox para destaques
+\newtcolorbox{reflexao}{
+    colback=yellow!5!white,
+    colframe=yellow!60!black,
+    title=\textbf{\boldmath �� Reflexão Crítica},
+    sharp corners=rounded,
+    boxrule=0.8pt,
+    fonttitle=\bfseries,
+    coltitle=black
+}
+
+\newtcolorbox{nota}{
+    colback=blue!5!white,
+    colframe=blue!60!black,
+    title=\textbf{\boldmath �� Nota / Atenção},
+    sharp corners=rounded,
+    boxrule=0.8pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+
+\newtcolorbox{pratico}{
+    colback=green!5!white,
+    colframe=green!60!black,
+    title=\textbf{\boldmath ��️ Aplicação Prática},
+    sharp corners=rounded,
+    boxrule=0.8pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+
+\newtcolorbox{analogia}{
+    colback=purple!5!white,
+    colframe=purple!60!black,
+    title=\textbf{\boldmath �� Analogia},
+    sharp corners=rounded,
+    boxrule=0.8pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+
+\title{Capítulo 5: Camada de Rede, Plano de Controle}
+
+\begin{document}
+
+\maketitle
+
+\noindent\textit{Esse documento cobre o {Capítulo 5 (Plano de Controle)}. Antes de escrever, vou conferir o conteúdo real dos seus slides da 9ª edição para o resumo bater certinho com o que cai na sua Prova 3. Bom material. Vou conferir vetor de distâncias, OSPF, BGP e SDN para garantir alinhamento. Excelente --- tenho o vetor de distâncias completo, com o exemplo de count-to-infinity. Última verificação: OSPF, BGP, SDN e ICMP. Conferido com seus slides da 9ª edição (e com os materiais de Packet Tracer). Está tudo alinhado.}
+
+\section*{Mapa do dia}
+
+A pergunta-mãe do capítulo é: \textbf{``quem decide os caminhos que os pacotes percorrem na rede?''} O Cap.~4 (plano de dados) respondeu \textit{como} um pacote é jogado da porta de entrada para a de saída. Agora o foco é \textit{como a tabela de encaminhamento é calculada}.
+
+\begin{figure}[h!]
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[
+    node distance=0.8cm and 0.8cm,
+    block/.style={draw=gray!80, fill=gray!10, rounded corners, align=center, minimum height=1.1cm, minimum width=2.4cm, font=\small},
+    redblock/.style={block, fill=red!15, draw=red!40},
+    blueblock/.style={block, fill=blue!15, draw=blue!40},
+    arrow/.style={-Stealth, thick, draw=gray!70}
+]
+    % Nós
+    \node[block] (A) {5.1 Introdução\\Controle $\times$ Dados};
+    \node[redblock, right=of A] (B) {5.2 Algoritmos\\de Roteamento};
+    
+    % Estado de Enlace e Vetor de Distâncias (B1 e B2) empilhados à direita de B
+    \node[blueblock, above right=0.2cm and 0.6cm of B] (B1) {Estado de Enlace\\Dijkstra};
+    \node[blueblock, below right=0.2cm and 0.6cm of B] (B2) {Vetor de Distâncias\\Bellman-Ford};
+    
+    \node[block, right=of B1] (C) {5.3 OSPF\\intra-AS};
+    \node[block, right=of B2] (D) {5.4 BGP\\inter-AS};
+    
+    \node[block, below right=0.2cm and 0.6cm of C] (E) {5.5 SDN\\controle centralizado};
+    \node[block, right=of E] (F) {5.6 ICMP};
+    
+    % Conexões
+    \draw[arrow] (A) -- (B);
+    \draw[arrow] (B.east) -- ++(0.3,0) |- (B1.west);
+    \draw[arrow] (B.east) -- ++(0.3,0) |- (B2.west);
+    \draw[arrow] (B1) -- (C);
+    \draw[arrow] (B2) -- (D);
+    \draw[arrow] (C.east) -- ++(0.3,0) |- (E.west);
+    \draw[arrow] (D.east) -- ++(0.3,0) |- (E.west);
+    \draw[arrow] (E) -- (F);
+\end{tikzpicture}
+}
+\caption{Dependência lógica e fluxo de tópicos do Capítulo 5.}
+\label{fig:mapa_dia}
+\end{figure}
+
+A dependência lógica é essa: você precisa de \textbf{estado de enlace} para entender OSPF, e da intuição de \textbf{vetor de distâncias} para entender BGP. Por isso o capítulo é estudado em bloco.
+
+\hrulefill
+
+\section{5.1 --- Roteamento $\times$ Encaminhamento (a distinção que cai sempre)}
+
+Essa diferença apareceu literalmente na Q10 do seu gabarito anterior. Memorize a dicotomia \textbf{macro $\times$ micro}:
+
+\begin{table}[h!]
+\centering
+\caption{Comparação entre Roteamento e Encaminhamento}
+\label{tab:roteamento_encaminhamento}
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+ & \textbf{Roteamento (Routing)} & \textbf{Encaminhamento (Forwarding)} \\
+\midrule
+\textbf{Plano} & \textbf{Controle} & \textbf{Dados} \\
+\textbf{Escala} & Rede inteira (fim-a-fim) & Local (um roteador) \\
+\textbf{Velocidade} & Lento (segundos/ms) & Rápido (nanossegundos) \\
+\textbf{O que faz} & \emph{Calcula} os melhores caminhos e constrói a tabela & \emph{Consulta} a tabela e move o pacote da porta de entrada $\to$ saída \\
+\textbf{Implementação} & Software (CPU do roteador / controlador) & Hardware (ASIC) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{reflexao}
+Roteamento é ``planejar a viagem com o mapa''; encaminhamento é ``virar à direita no cruzamento''. A separação importa porque é exatamente o que o \textbf{SDN} explora --- ele \textit{arranca} o roteamento de dentro do roteador e o centraliza.
+\end{reflexao}
+
+\paragraph{Duas abordagens de implementação do plano de controle:}
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+    node distance=1.0cm and 0.8cm,
+    router/.style={draw=gray!80, fill=blue!10, rounded corners, align=center, minimum height=1.0cm, minimum width=2.4cm, font=\small},
+    ctrl/.style={draw=gray!80, fill=green!15, rounded corners, align=center, minimum height=1.0cm, minimum width=2.8cm, font=\small},
+    sw/.style={draw=gray!80, fill=orange!15, rounded corners, align=center, minimum height=0.8cm, minimum width=1.8cm, font=\small},
+    link/.style={thick, draw=gray!70},
+    openflow/.style={-Stealth, dashed, thick, draw=purple!80}
+]
+    % Tradicional
+    \begin{scope}[local bounding box=trad]
+        \node[router] (R1) {Roteador\\+ alg. roteamento};
+        \node[router, below=of R1] (R2) {Roteador\\+ alg. roteamento};
+        \node[router, below=of R2] (R3) {Roteador\\+ alg. roteamento};
+        \draw[link] (R1) -- (R2);
+        \draw[link] (R2) -- (R3);
+    \end{scope}
+    \node[draw=blue!40, fill=blue!5, fill opacity=0.1, rounded corners, fit=(trad) (R1) (R3), inner sep=10pt, label={[font=\bfseries]above:Tradicional: controle por roteador}] (boxT) {};
+
+    % SDN (posicionado à direita)
+    \begin{scope}[shift={(6.5cm, -0.5cm)}, local bounding box=sdn]
+        \node[ctrl] (C) {Controlador Remoto};
+        
+        \node[sw, below left=1.2cm and 0.3cm of C] (SW1) {Switch};
+        \node[sw, below=1.2cm of C] (SW2) {Switch};
+        \node[sw, below right=1.2cm and 0.3cm of C] (SW3) {Switch};
+        
+        \draw[openflow] (C.south) -- (SW1.north) node[above, pos=0.6, sloped, font=\tiny\bfseries, text=purple] {OpenFlow};
+        \draw[openflow] (C.south) -- (SW2.north) node[right, pos=0.6, font=\tiny\bfseries, text=purple] {OpenFlow};
+        \draw[openflow] (C.south) -- (SW3.north) node[above, pos=0.6, sloped, font=\tiny\bfseries, text=purple] {OpenFlow};
+    \end{scope}
+    \node[draw=orange!40, fill=orange!5, fill opacity=0.1, rounded corners, fit=(sdn) (C) (SW1) (SW3), inner sep=10pt, label={[font=\bfseries]above:SDN: controle logicamente centralizado}] (boxS) {};
+\end{tikzpicture}
+\caption{Abordagem tradicional com controle distribuído vs. Abordagem baseada em SDN.}
+\label{fig:abordagens_controle}
+\end{figure}
+
+\subsection{A Separação dos Planos de Dados e Controle: Conceito e Motivação}
+
+Historicamente, nas redes de computadores tradicionais, o plano de dados e o plano de controle vinham integrados de forma monolítica dentro de cada roteador individual (uma solução física fechada do fabricante). No entanto, o paradigma moderno de redes (especialmente impulsionado pelo SDN) consolidou uma separação explícita entre esses dois planos.
+
+\subsubsection{Conceito}
+A distinção fundamental reside no escopo de atuação de cada um dos planos:
+\begin{itemize}
+    \item \textbf{Plano de Dados (Local):} O plano de dados atua em cada roteador individualmente. Sua principal função é o \emph{encaminhamento} (forwarding): pegar um datagrama recebido em uma interface de entrada, inspecionar seu cabeçalho e direcioná-lo para a interface de saída correspondente, com base na tabela de encaminhamento local. É executado em hardware especializado (ASICs) para garantir tempos de processamento da ordem de nanossegundos.
+    \item \textbf{Plano de Controle (Global):} O plano de controle coordena a rede fim-a-fim. Sua principal função é o \emph{roteamento} (routing): determinar a trajetória (caminho completo) que um pacote fará desde o host de origem até o host de destino. Ele calcula os valores que preenchem as tabelas de encaminhamento do plano de dados. É implementado em software na CPU e processado em milissegundos.
+\end{itemize}
+
+\subsubsection{Por que houve a divisão?}
+A decisão de separar o plano de controle do plano de dados decorre de limitações fundamentais da arquitetura tradicional integrada:
+\begin{enumerate}
+    \item \textbf{Complexidade de Gerenciamento:} Redes tradicionais dependem de algoritmos distribuídos e assíncronos rodando de forma independente em centenas ou milhares de roteadores. A gerência desse sistema distribuído era complexa e propensa a falhas humanas de configuração (\emph{misconfigurations}).
+    \item \textbf{Engenharia de Tráfego Inflexível:} No roteamento tradicional, os pacotes são encaminhados exclusivamente com base no endereço IP de destino (\emph{destination-based routing}). Se um administrador deseja desviar fluxos de tráfego específicos (como separar tráfego de voz de dados) por caminhos diferentes que possuem a mesma origem e destino, isso era extremamente complexo e ineficiente de programar em protocolos clássicos de roteamento.
+    \item \textbf{Falta de Inovação (Vendor Lock-in):} Como o plano de controle rodava em sistemas operacionais proprietários e fechados (como o Cisco IOS) dentro de caixas pretas de hardware, propor novos algoritmos ou protocolos exigia o aval e atualização de software por parte das próprias fabricantes. A separação permite que o plano de controle seja escrito em software livre e rodado em servidores comerciais genéricos.
+\end{enumerate}
+
+Ao desacoplar o plano de controle do plano de dados, o SDN tornou as redes programáveis. Os roteadores tornaram-se switches generalizados e simplificados de Match+Action (plano de dados), e toda a lógica de roteamento foi concentrada de forma centralizada e global no controlador SDN (plano de controle).
+
+\hrulefill
+
+\section{5.2 --- Algoritmos de roteamento (o núcleo do dia)}
+
+\subsection{Abstração de grafo}
+
+A rede vira um grafo $G = (N, E)$, onde $N$ são os roteadores e $E$ os enlaces. Cada enlace tem um custo $c_{a,b}$ definido pelo operador --- pode ser sempre $1$ (conta saltos), ou inversamente profissional à banda, ou ao congestionamento. Se não há enlace direto, $c_{a,b} = \infty$.
+
+\subsection{Classificação (cai em V/F --- Q1)}
+
+\begin{table}[h!]
+\centering
+\caption{Classificação dos Algoritmos de Roteamento}
+\label{tab:classificacao}
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+\textbf{Critério} & \textbf{Tipo 1} & \textbf{Tipo 2} \\
+\midrule
+\textbf{Informação} & \textbf{Global} (todos conhecem a topologia toda) $\to$ \emph{estado de enlace} & \textbf{Descentralizado} (cada nó só conhece vizinhos) $\to$ \emph{vetor de distâncias} \\
+\textbf{Dinâmica} & \textbf{Estático} (rotas mudam devagar) & \textbf{Dinâmico} (mudam rápido, por updates periódicos ou eventos) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\hrulefill
+
+\subsection{A) Estado de Enlace --- Algoritmo de Dijkstra}
+
+\textbf{Ideia central:} cada roteador faz um \textit{link-state broadcast} (inunda a rede com o custo de seus enlaces). Depois disso, \textbf{todos têm a topologia completa} e cada um roda Dijkstra localmente para achar os caminhos de menor custo a partir de si.
+
+\paragraph{Notação:}
+\begin{itemize}
+    \item $D(v)$: estimativa atual do custo do caminho mínimo da origem até $v$.
+    \item $p(v)$: nó predecessor de $v$ no caminho.
+    \item $N'$: conjunto de nós cujo caminho mínimo já é \textbf{definitivo}.
+\end{itemize}
+
+\paragraph{O laço de Dijkstra:}
+\[
+D(v) = \min\big(D(v),\; D(w) + c_{w,v}\big)
+\]
+A cada iteração, escolhe-se o nó $w \notin N'$ de menor $D(w)$, adiciona-se a $N'$, e relaxam-se seus vizinhos.
+
+\subsubsection{Exemplo passo a passo (o grafo dos seus slides)}
+
+Origem = $u$. Grafo com custos:
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+    node/.style={circle, draw=blue!85, fill=blue!10, thick, minimum size=8mm, font=\boldmath},
+    edge/.style={draw=gray!80, thick},
+    weight/.style={font=\small, fill=white, inner sep=2pt}
+]
+    % Nós
+    \node[node] (u) at (0,0) {u};
+    \node[node] (v) at (2.5,2) {v};
+    \node[node] (x) at (2.5,-2) {x};
+    \node[node] (w) at (5.5,2) {w};
+    \node[node] (y) at (5.5,-2) {y};
+    \node[node] (z) at (8,0) {z};
+    
+    % Arestas
+    \draw[edge] (u) -- node[weight] {2} (v);
+    \draw[edge] (u) -- node[weight, pos=0.7] {5} (w);
+    \draw[edge] (u) -- node[weight] {1} (x);
+    \draw[edge] (v) -- node[weight] {2} (x);
+    \draw[edge] (v) -- node[weight] {3} (w);
+    \draw[edge] (x) -- node[weight, pos=0.3] {3} (w);
+    \draw[edge] (x) -- node[weight] {1} (y);
+    \draw[edge] (w) -- node[weight] {1} (y);
+    \draw[edge] (w) -- node[weight] {5} (z);
+    \draw[edge] (y) -- node[weight] {2} (z);
+\end{tikzpicture}
+\caption{Grafo de exemplo para execução do Algoritmo de Dijkstra.}
+\label{fig:grafo_dijkstra}
+\end{figure}
+
+\begin{table}[h!]
+\centering
+\caption{Tabela de iterações do Dijkstra a partir da origem $u$}
+\label{tab:dijkstra_tabela}
+\begin{tabular}{c l c c c c c}
+\toprule
+\textbf{Step} & $N'$ & $D(v),p$ & $D(w),p$ & $D(x),p$ & $D(y),p$ & $D(z),p$ \\
+\midrule
+0 & $u$ & $2,u$ & $5,u$ & \textbf{1,u} & $\infty$ & $\infty$ \\
+1 & $ux$ & $2,u$ & $4,x$ & & \textbf{2,x} & $\infty$ \\
+2 & $uxy$ & \textbf{2,u} & $3,y$ & & & $4,y$ \\
+3 & $uxyv$ & & \textbf{3,y} & & & $4,y$ \\
+4 & $uxyvw$ & & & & & \textbf{4,y} \\
+5 & $uxyvwz$ & & & & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Como ler (o examinador quer ver a derivação, não só o resultado):}
+\begin{itemize}
+    \item \textbf{Step 0:} inicializa com custos diretos. Menor fora de $N'$: $x$ (custo 1) $\to$ entra.
+    \item \textbf{Step 1:} relaxa vizinhos de $x$. $D(w)=\min(5,\,1{+}3)=4$; $D(y)=\min(\infty,\,1{+}1)=2$. Empate entre $v$(2) e $y$(2) $\to$ desempate arbitrário, escolhe $y$.
+    \item \textbf{Step 2:} relaxa vizinhos de $y$. $D(w)=\min(4,\,2{+}1)=3$ (via $y$); $D(z)=\min(\infty,\,2{+}2)=4$. Menor: $v$(2) $\to$ entra.
+    \item \textbf{Step 3–4:} $w$(3) e depois $z$(4) entram. Note que $D(z)$ ficou em 4 via $y$, pois $3{+}5=8 > 4$.
+\end{itemize}
+
+\textbf{Tabela de encaminhamento resultante em $u$} (extraída da árvore de menor custo):
+
+\begin{table}[h!]
+\centering
+\caption{Tabela de encaminhamento resultante no nó $u$}
+\label{tab:encaminhamento_u}
+\begin{tabular}{c c c}
+\toprule
+\textbf{Destino} & \textbf{Enlace de saída} & \textbf{Custo} \\
+\midrule
+$v$ & $(u,v)$ direto & 2 \\
+$x$ & $(u,x)$ direto & 1 \\
+$y$ & $(u,x)$ & 2 \\
+$w$ & $(u,x)$ & 3 \\
+$z$ & $(u,x)$ & 4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{nota}
+Repare: \textit{todos os destinos menos $v$} saem por $(u,x)$. O enlace barato $u$–$x$ vira a ``porta de entrada'' da rede para $u$.
+\end{nota}
+
+\paragraph{Complexidade e limitações:}
+\begin{itemize}
+    \item $n$ iterações, cada uma checando até $n$ nós $\to$ $O(n^2)$ (melhorável para $O(n\log n)$ com heap).
+    \item Mensagens: cada roteador faz broadcast $\to$ complexidade de mensagens $O(n^2)$.
+    \item \textbf{⚠️ Oscilações:} se o custo depende do volume de tráfego, as rotas podem oscilar (todos migram para o enlace ``barato'', que fica congestionado, e o ciclo se repete). É um ponto crítico de prova.
+\end{itemize}
+
+\hrulefill
+
+\subsection{B) Vetor de Distâncias --- Equação de Bellman-Ford}
+
+\textbf{Ideia central:} ninguém conhece a topologia toda. Cada nó só sabe o custo aos vizinhos e \textbf{troca seu vetor de distâncias} periodicamente com eles. A informação se difunde iterativamente pela rede.
+
+\paragraph{Equação de Bellman-Ford} (programação dinâmica):
+\[
+D_x(y) = \min_{v}\big\{\, c_{x,v} + D_v(y) \,\big\}
+\]
+onde o mínimo é tomado sobre \textbf{todos os vizinhos $v$ de $x$}. O vizinho que atinge o mínimo é o \textbf{próximo salto} no caminho.
+
+\subsubsection{Exemplo (dos seus slides)}
+
+$u$ quer alcançar $z$. Os vizinhos $v, x, w$ já anunciaram: $D_v(z)=5$, $D_x(z)=3$, $D_w(z)=3$.
+\[
+D_u(z) = \min
+\begin{cases}
+c_{u,v} + D_v(z) = 2 + 5 = 7 \\
+c_{u,x} + D_x(z) = 1 + 3 = \mathbf{4} \\
+c_{u,w} + D_w(z) = 5 + 3 = 8
+\end{cases}
+= 4 \quad \text{(próximo salto: } x\text{)}
+\]
+
+\paragraph{Características operacionais:}
+\begin{itemize}
+    \item \textbf{Iterativo e assíncrono:} cada nó recalcula quando muda um custo local \textit{ou} chega um vetor de vizinho.
+    \item \textbf{Distribuído e auto-terminável:} o nó só avisa os vizinhos \textbf{se} seu vetor mudou. Sem mudança $\to$ sem mensagem.
+\end{itemize}
+
+\subsubsection{O problema do count-to-infinity (cai em prova!)}
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+    node/.style={circle, draw=green!60!black, fill=green!10, thick, minimum size=8mm, font=\boldmath},
+    edge/.style={draw=gray!80, thick},
+    weight/.style={font=\small, fill=white, inner sep=2pt}
+]
+    \node[node] (x) at (0,1.5) {x};
+    \node[node] (y) at (3,1.5) {y};
+    \node[node] (z) at (1.5,0) {z};
+    
+    \draw[edge] (x) -- node[weight] {4 $\to$ 60} (y);
+    \draw[edge] (y) -- node[weight] {1} (z);
+    \draw[edge] (x) -- node[weight] {50} (z);
+\end{tikzpicture}
+\caption{Exemplo do count-to-infinity com o enlace $x-y$ encarecendo.}
+\label{fig:count_to_infinity}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{``Good news travels fast'':} se um enlace \textit{barateia}, a boa notícia se propaga rápido.
+    \item \textbf{``Bad news travels slow'':} se o enlace $y$–$x$ \textit{encarece} de 4 para 60, surge um laço de roteamento:
+    \begin{itemize}
+        \item $y$ vê custo direto 60, mas $z$ anunciou caminho de custo 5 $\to$ $y$ calcula ``6 via $z$''.
+        \item $z$ aprende ``7 via $y$'' $\to$ $y$ aprende ``8 via $z$'' $\to$ ... sobe de 1 em 1 até estabilizar. Lentíssimo.
+    \end{itemize}
+\end{itemize}
+
+\begin{reflexao}
+O count-to-infinity existe porque $z$ não sabe que seu ``caminho barato para $x$'' na verdade \textit{passava por $y$}. Soluções como \textit{poisoned reverse} e \textit{split horizon} mitigam, mas não resolvem todos os casos. Isso é uma vantagem estrutural do estado de enlace: lá cada nó tem a topologia completa, então não cria essas ilusões.
+\end{reflexao}
+
+\hrulefill
+
+\subsection{Comparação LS $\times$ DV (formato clássico das suas provas)}
+
+\begin{table}[h!]
+\centering
+\caption{Comparação entre Estado de Enlace (LS) e Vetor de Distâncias (DV)}
+\label{tab:ls_vs_dv}
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+\textbf{Aspecto} & \textbf{Estado de Enlace (LS)} & \textbf{Vetor de Distâncias (DV)} \\
+\midrule
+\textbf{Informação} & Global (topologia completa) & Local (só vizinhos) \\
+\textbf{Algoritmo} & Dijkstra & Bellman-Ford \\
+\textbf{Mensagens} & $O(n^2)$, broadcast a todos & Só entre vizinhos \\
+\textbf{Convergência} & $O(n^2)$; pode \textbf{oscilar} & Variável; \textbf{laços} e \textbf{count-to-infinity} \\
+\textbf{Robustez} & Anuncia custo errado $\to$ afeta só o próprio cálculo de cada nó & Anuncia caminho errado $\to$ \textbf{propaga pela rede} (\emph{black-holing}) \\
+\textbf{Protocolo real} & \textbf{OSPF} & \textbf{RIP}, EIGRP \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\hrulefill
+
+\section{5.3 --- OSPF (Open Shortest Path First): roteamento intra-AS}
+
+Primeiro, a motivação de \textbf{escala}: a Internet tem bilhões de destinos. Não dá para um roteador guardar todos, nem para todos rodarem um único algoritmo ``plano''. A solução é agregar roteadores em \textbf{Sistemas Autônomos (AS)} --- e separar:
+\begin{itemize}
+    \item \textbf{Intra-AS} (dentro de um AS): OSPF, RIP, EIGRP.
+    \item \textbf{Inter-AS} (entre ASes): BGP.
+\end{itemize}
+
+\textbf{OSPF é estado de enlace clássico:}
+\begin{itemize}
+    \item ``Open'' = especificação pública ($\neq$ proprietário).
+    \item Cada roteador inunda \textit{link-state advertisements} para todo o AS --- \textbf{direto sobre IP} (protocolo 89), sem TCP/UDP.
+    \item Cada um monta a topologia completa e roda \textbf{Dijkstra}.
+    \item Métricas configuráveis: banda, atraso (não apenas saltos).
+    \item \textbf{Mensagens autenticadas} (segurança contra intrusos).
+\end{itemize}
+
+\subsection{OSPF hierárquico}
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+    router/.style={circle, draw=blue!70, fill=blue!5, thick, minimum size=8mm, font=\tiny, align=center},
+    br/.style={router, draw=red!70, fill=red!5}, 
+    abr/.style={router, draw=purple!70, fill=purple!5}, 
+    bdr/.style={router, draw=orange!70, fill=orange!5}, 
+    link/.style={draw=gray!70, thick}
+]
+    % Área 0 - Backbone (Top)
+    \node[br] (BR1) at (2, 3) {Backbone\\Router 1};
+    \node[br] (BR2) at (5, 3) {Backbone\\Router 2};
+    \draw[link] (BR1) -- (BR2);
+    
+    % Área 1 (Bottom Left)
+    \node[abr] (ABR1) at (0, 0) {ABR 1};
+    \node[router] (L1_1) at (-1.2, -1.5) {Local\\Router 1};
+    \node[router] (L1_2) at (1.2, -1.5) {Local\\Router 2};
+    \draw[link] (ABR1) -- (L1_1);
+    \draw[link] (ABR1) -- (L1_2);
+    \draw[link] (L1_1) -- (L1_2);
+    
+    % Área 2 (Bottom Right)
+    \node[abr] (ABR2) at (7, 0) {ABR 2};
+    \node[router] (L2_1) at (5.8, -1.5) {Local\\Router 3};
+    \node[router] (L2_2) at (8.2, -1.5) {Local\\Router 4};
+    \draw[link] (ABR2) -- (L2_1);
+    \draw[link] (ABR2) -- (L2_2);
+    \draw[link] (L2_1) -- (L2_2);
+    
+    % Outros AS (Right)
+    \node[bdr] (BdR) at (7.5, 3) {Boundary\\Router};
+    
+    % Conexões Inter-área
+    \draw[link, dashed] (ABR1) -- (BR1);
+    \draw[link, dashed] (ABR2) -- (BR2);
+    \draw[link, double] (BR2) -- (BdR);
+    
+    % Caixas (Subgraphs)
+    \node[draw=red!40, dashed, fill=red!5, fill opacity=0.15, rounded corners, fit=(BR1) (BR2), inner sep=12pt, label={[font=\bfseries, text=red!80!black]above:Backbone (Área 0)}] {};
+    \node[draw=blue!40, dashed, fill=blue!5, fill opacity=0.15, rounded corners, fit=(ABR1) (L1_1) (L1_2), inner sep=12pt, label={[font=\bfseries, text=blue!80!black]below:Área 1}] {};
+    \node[draw=purple!40, dashed, fill=purple!5, fill opacity=0.15, rounded corners, fit=(ABR2) (L2_1) (L2_2), inner sep=12pt, label={[font=\bfseries, text=purple!80!black]below:Área 2}] {};
+\end{tikzpicture}
+\caption{Arquitetura hierárquica do OSPF dividido em áreas.}
+\label{fig:ospf_hierarquico}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{Dois níveis:} área local + backbone (Área 0).
+    \item LSAs inundam \textbf{só dentro da área}; \textit{area border routers} (ABR) sumarizam distâncias e anunciam no backbone.
+    \item \textbf{Todo tráfego entre áreas passa pela Área 0.} Áreas não-backbone não trocam tráfego diretamente.
+    \item \textit{Por que dividir?} Numa rede grande, manter a base de estado de enlace idêntica e atualizada em todos os roteadores fica inviável $\to$ a hierarquia reduz tabela e tráfego de controle.
+\end{itemize}
+
+\begin{pratico}
+Na config Cisco, \texttt{router ospf 1} define o process-id e \texttt{network 192.168.1.0 0.0.0.255 area 0} associa redes à área 0 --- exatamente a hierarquia acima. RIP $\times$ OSPF na Cisco: RIP usa saltos e serve redes pequenas; OSPF usa Dijkstra + banda e escala para redes grandes.
+\end{pratico}
+
+\hrulefill
+
+\section{5.4 --- BGP (Border Gateway Protocol): roteamento inter-AS}
+
+O BGP é a \textbf{``cola que mantém a Internet unida''} --- o protocolo de roteamento inter-domínio de fato. Ele permite que um AS anuncie: \textit{``estou aqui, alcanço estes destinos, e por este caminho.''}
+
+\paragraph{Duas variantes:}
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+    router/.style={circle, draw=gray!80, fill=gray!10, thick, minimum size=10mm, font=\small, align=center},
+    gateway/.style={router, fill=blue!10, draw=blue!80},
+    ebgp/.style={<->, >=Stealth, ultra thick, draw=red!80},
+    ibgp/.style={<->, >=Stealth, dashed, thick, draw=blue!70}
+]
+    % AS 1
+    \begin{scope}[local bounding box=as1]
+        \node[gateway] (a1c) at (0,0) {1c\\(gw)};
+        \node[router] (a1d) at (-2,0) {1d};
+        \draw[thick] (a1c) -- (a1d);
+        \draw[ibgp] (a1c) to[bend left=20] node[above, font=\tiny\bfseries] {iBGP} (a1d);
+    \end{scope}
+    \node[draw=blue!40, fill=blue!5, fill opacity=0.1, rounded corners, fit=(as1) (a1c) (a1d), inner sep=10pt, label={[font=\bfseries]above:AS 1}] {};
+
+    % AS 2
+    \begin{scope}[shift={(5.0cm, 0)}, local bounding box=as2]
+        \node[gateway] (a2a) at (0,0) {2a\\(gw)};
+        \node[gateway] (a2c) at (2.5,0) {2c\\(gw)};
+        \draw[thick] (a2a) -- (a2c);
+        \draw[ibgp] (a2a) to[bend left=20] node[above, font=\tiny\bfseries] {iBGP} (a2c);
+    \end{scope}
+    \node[draw=orange!40, fill=orange!5, fill opacity=0.1, rounded corners, fit=(as2) (a2a) (a2c), inner sep=10pt, label={[font=\bfseries]above:AS 2}] {};
+
+    % Conexão eBGP
+    \draw[ebgp] (a1c) -- node[above, font=\small\bfseries, text=red!80!black] {eBGP} (a2a);
+\end{tikzpicture}
+\caption{Diferença na propagação BGP interna (iBGP) e externa (eBGP).}
+\label{fig:ebgp_vs_ibgp}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{eBGP:} obtém info de alcançabilidade de ASes vizinhos (entre gateways de ASes distintos).
+    \item \textbf{iBGP:} propaga essa info para todos os roteadores \textit{internos} do AS.
+\end{itemize}
+
+\paragraph{Anúncio de caminhos (path vector):} o BGP não anuncia só custo --- anuncia o \textbf{AS-PATH} (a sequência de ASes). Quando AS3 anuncia \texttt{AS3,X} para AS2, ele \textit{promete encaminhar} datagramas para $X$. AS2 propaga \texttt{AS2,AS3,X}, e assim por diante. O AS-PATH evita laços (se um AS se vê no caminho, rejeita).
+
+\paragraph{Seleção de rota} (critérios em ordem):
+\begin{enumerate}
+    \item \textbf{Local preference} (decisão de política / negócio).
+    \item Menor \textbf{AS-PATH}.
+    \item \textbf{NEXT-HOP mais próximo} $\to$ \textit{hot potato routing}.
+    \item Critérios adicionais.
+\end{enumerate}
+
+\paragraph{Hot potato routing:} o AS escolhe o gateway de saída de \textbf{menor custo intra-domínio} (joga a ``batata quente'' para fora o mais rápido possível), \textbf{ignorando} o custo inter-domínio.
+
+\begin{reflexao}
+Dentro do AS, há um único administrador $\to$ o foco é \textbf{performance}. Entre ASes, há interesses comerciais conflitantes $\to$ a \textbf{política domina}. É por isso que um provedor pode escolher \textit{não} anunciar uma rota mesmo que ela exista: ele não quer carregar tráfego de trânsito de graça entre outros ISPs.
+\end{reflexao}
+
+\hrulefill
+
+\section{5.5 --- SDN (Software-Defined Networking)}
+
+\paragraph{Contexto histórico:} até $\approx 2005$, o plano de controle era \textbf{distribuído e por roteador} --- cada roteador monolítico rodava implementações proprietárias (IP, OSPF, BGP) num SO fechado (Cisco IOS), com \textit{middleboxes} separadas (firewall, NAT, load balancer). O SDN propõe \textbf{arrancar o controle do hardware} e centralizá-lo logicamente.
+
+\paragraph{As 3 características do SDN (cai direto em V/F --- Q1):}
+
+\begin{table}[h!]
+\centering
+\caption{As Três Características do SDN}
+\label{tab:caracteristicas_sdn}
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+\textbf{Característica} & \textbf{O que significa} \\
+\midrule
+\textbf{1. Plano de controle separado do de dados} & Switches ``burros'' só encaminham; a inteligência sai deles. \\
+\textbf{2. Controle logicamente centralizado} & Um \emph{controlador SDN} (software) computa as tabelas para todos. \\
+\textbf{3. Encaminhamento generalizado (match+action)} & Regras baseadas em campos de enlace/rede/transporte --- não apenas IP de destino. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Como o controlador instala rotas} (interação controle/dados):
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+    node distance=2.5cm,
+    lifeline/.style={draw=gray, dashed, thick},
+    entity/.style={rectangle, draw, fill=blue!10, rounded corners, minimum width=2.8cm, minimum height=1.2cm, font=\small\bfseries, align=center},
+    msg/.style={-Stealth, thick, font=\footnotesize, align=left}
+]
+    % Participantes
+    \node[entity] (App) {App de roteamento\\(Dijkstra)};
+    \node[entity, right=of App] (Ctrl) {Controlador\\SDN};
+    \node[entity, right=of Ctrl] (SW) {Switches};
+    
+    % Linhas de vida
+    \draw[lifeline] (App.south) -- ++(0, -6.0) coordinate (AppEnd);
+    \draw[lifeline] (Ctrl.south) -- ++(0, -6.0) coordinate (CtrlEnd);
+    \draw[lifeline] (SW.south) -- ++(0, -6.0) coordinate (SWEnd);
+    
+    % Troca de mensagens
+    % 1. App -> Ctrl
+    \draw[msg] ($(App.south)!0.15!(AppEnd)$) -- node[above] {1. info de estado de enlace} ($(Ctrl.south)!0.15!(CtrlEnd)$);
+    
+    % 2. Ctrl self-loop
+    \draw[msg] ($(Ctrl.south)!0.30!(CtrlEnd)$) -- ++(1.0, 0) -- ++(0, -0.6) -- node[below, pos=0.5, xshift=1.2cm, yshift=0.2cm] {2. computa rotas\\(Dijkstra)} ($(Ctrl.south)!0.42!(CtrlEnd)$);
+    
+    % 3. Ctrl -> App
+    \draw[msg] ($(Ctrl.south)!0.58!(CtrlEnd)$) -- node[above] {3. interage c/ flow-tables} ($(App.south)!0.58!(AppEnd)$);
+    
+    % 4. App -> Ctrl
+    \draw[msg] ($(App.south)!0.72!(AppEnd)$) -- node[above] {4. devolve novas flow tables} ($(Ctrl.south)!0.72!(CtrlEnd)$);
+    
+    % 5. Ctrl -> SW
+    \draw[msg] ($(Ctrl.south)!0.88!(CtrlEnd)$) -- node[above] {5-6. instala tabelas (OpenFlow)} ($(SW.south)!0.88!(SWEnd)$);
+\end{tikzpicture}
+\caption{Fluxo de mensagens na instalação de rotas por meio do controlador SDN.}
+\label{fig:fluxo_sdn}
+\end{figure}
+
+\paragraph{Por que centralizar?}
+\begin{itemize}
+    \item Gerência mais fácil (evita desconfigurações, dá flexibilidade aos fluxos).
+    \item ``Programar'' a rede centralmente é mais simples que via algoritmo distribuído.
+    \item Implementação aberta $\to$ fomenta inovação.
+\end{itemize}
+
+\begin{analogia}
+É a revolução \textit{mainframe $\to$ PC}. Antes, hardware + SO + apps verticalmente integrados e fechados (inovação lenta). Depois, interfaces abertas e horizontais (microprocessador, SO, apps separados) $\to$ indústria gigante e inovação rápida. \textbf{Engenharia de tráfego} ilustra bem: forçar tráfego $u \to z$ pela rota $uvwz$ em vez de $uxyz$ é \textit{difícil} no roteamento tradicional (você teria que mexer em pesos de enlace e torcer), mas trivial no SDN (você simplesmente programa a flow table).
+\end{analogia}
+
+\hrulefill
+
+\section{5.6 --- ICMP (Internet Control Message Protocol)}
+
+Protocolo de \textbf{mensagens de controle e erro} entre hosts/roteadores. Carregado \textit{dentro} de datagramas IP. Tem campos \textbf{type} e \textbf{code}. Os principais para prova:
+
+\begin{table}[h!]
+\centering
+\caption{Principais Tipos e Códigos de Mensagens ICMP}
+\label{tab:icmp}
+\begin{tabular}{c c l}
+\toprule
+\textbf{Type} & \textbf{Code} & \textbf{Significado} \\
+\midrule
+3 & 0 & Rede de destino inalcançável \\
+3 & 1 & Host de destino inalcançável \\
+3 & 3 & \textbf{Porta} inalcançável \\
+8 & 0 & Echo request (\textbf{ping}) \\
+11 & 0 & \textbf{TTL expirado} \\
+12 & 0 & Cabeçalho IP ruim \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Traceroute usa ICMP de forma engenhosa:}
+\begin{itemize}
+    \item A origem envia conjuntos de segmentos UDP com \textbf{TTL crescente} (1, 2, 3, ...).
+    \item O $n$-ésimo roteador no caminho recebe o datagrama com TTL=0 $\to$ descarta e devolve \textbf{ICMP type 11, code 0} (TTL expirado), incluindo seu IP.
+    \item Medindo o RTT de cada resposta, mapeia-se o caminho salto a salto.
+    \item \textbf{Parada:} quando o UDP finalmente chega ao destino, este responde \textbf{ICMP type 3, code 3} (porta inalcançável) $\to$ a origem para.
+\end{itemize}
+
+\hrulefill
+
+\section*{�� Amarração com a prova-base}
+
+\begin{table}[h!]
+\centering
+\caption{Mapeamento de Tópicos com a Prova-base}
+\label{tab:relacao_prova}
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+\textbf{Questão} & \textbf{Como o Dia 1 resolve} \\
+\midrule
+\textbf{Q1 (V/F)} ICMP/OSPF/BGP no plano de controle & Seções 5.3 / 5.4 / 5.6 --- todos pertencem ao plano de controle $\checkmark$ \\
+\textbf{Q1 (V/F)} 3 características do SDN & Tabela das características do SDN (Seção 5.5) $\checkmark$ \\
+\textbf{Q1 (V/F)} OSPF (estado de enlace) $\times$ RIP (vetor de distâncias, \textbf{não} ``de caminhos'') & Seções 5.2/5.3 --- atenção à pegadinha: \emph{vetor de caminhos} é o \textbf{BGP} $\checkmark$ \\
+\textbf{Q6} Estado de enlace $\times$ vetor de distâncias & Seção 5.2 completa, com ambos os exemplos numéricos $\checkmark$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\end{document}

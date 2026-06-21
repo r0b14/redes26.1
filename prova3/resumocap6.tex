@@ -1,0 +1,456 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazilian]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{geometry}
+\geometry{a4paper, top=1cm, bottom=1.3cm, left=1.5cm, right=1.5cm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{tcolorbox}
+\usepackage{tikz}
+\usepackage{microtype}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+
+\usetikzlibrary{positioning, arrows.meta, fit, backgrounds, calc}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Resumo Capítulo 6 - Camada de Enlace},
+    pdfpagemode=FullScreen,
+}
+
+% Configuração de cabeçalho e rodapé com número da página no canto direito
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[R]{\thepage}
+
+% Definições do tcolorbox para destaques
+\newtcolorbox{reflexao}{
+    colback=yellow!5!white,
+    colframe=yellow!60!black,
+    title=\textbf{\boldmath 🧠 Reflexão Crítica},
+    sharp corners=rounded,
+    boxrule=0.8pt,
+    fonttitle=\bfseries,
+    coltitle=black
+}
+
+\newtcolorbox{nota}{
+    colback=blue!5!white,
+    colframe=blue!60!black,
+    title=\textbf{\boldmath 📌 Nota / Atenção},
+    sharp corners=rounded,
+    boxrule=0.8pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+
+\newtcolorbox{pratico}{
+    colback=green!5!white,
+    colframe=green!60!black,
+    title=\textbf{\boldmath 🛠️ Aplicação Prática},
+    sharp corners=rounded,
+    boxrule=0.8pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+
+\newtcolorbox{analogia}{
+    colback=purple!5!white,
+    colframe=purple!60!black,
+    title=\textbf{\boldmath 💡 Analogia},
+    sharp corners=rounded,
+    boxrule=0.8pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+
+\title{Capítulo 6: Camada de Enlace (exceto 6.3) e Redes de Datacenter}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{fancy}
+
+\noindent\textit{Esse documento cobre o {Capítulo 6 (Camada de Enlace, exceto 6.3)}. Alinhei o conteúdo com seus slides da 9ª edição e com as questões da prova-base (especialmente Q2 e Q4) para garantir que cobrimos exatamente o escopo necessário para a Prova 3. Vamos do pré-requisito de endereçamento até as redes de datacenter.}
+
+\hrulefill
+
+\section*{0. Revisão-relâmpago: Sub-redes (/27) e NAT}
+
+A \textbf{Q4} da sua prova-base apresenta a máscara \texttt{255.255.255.224} e duas LANs. Isso é uma ferramenta conceitual para a resolução, mas você precisa saber derivá-la rapidamente.
+
+\subsection*{Máscara /27}
+
+Como os primeiros 27 bits são 1, o último octeto tem 3 bits de rede e 5 bits de host:
+\[
+\underbrace{11111111}_{255} \cdot \underbrace{11111111}_{255} \cdot \underbrace{11111111}_{255} \cdot \underbrace{11100000}_{224}
+\]
+\begin{itemize}
+    \item \textbf{Bits de rede:} $27 \implies$ \textbf{Bits de host:} $32 - 27 = 5$.
+    \item \textbf{Hosts utilizáveis por sub-rede:} $2^5 - 2 = 30$ (descontando endereço de rede e de broadcast).
+    \item \textbf{Tamanho do bloco (salto):} $256 - 224 = 32$.
+\end{itemize}
+
+Conferindo com a topologia da Q4:
+\begin{table}[h!]
+\centering
+\caption{Sub-redes identificadas no cenário da Q4}
+\label{tab:subredes_q4}
+\begin{tabularx}{\textwidth}{lXXX}
+\toprule
+\textbf{LAN} & \textbf{End. de Rede} & \textbf{Faixa Utilizável} & \textbf{End. Broadcast} \\
+\midrule
+\textbf{X} & \texttt{192.228.17.32} & \texttt{.33} a \texttt{.62} & \texttt{192.228.17.63} \\
+\textbf{Y} & \texttt{192.228.17.64} & \texttt{.65} a \texttt{.94} & \texttt{192.228.17.95} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Note que os IPs dados na questão, \texttt{A = .33} e \texttt{B = .57}, pertencem à \textbf{LAN X}. Já \texttt{C = .65} e \texttt{D = .66} pertencem à \textbf{LAN Y}. Isso bate com o diagrama: o roteador R1 possui uma interface física em cada uma dessas sub-redes.
+
+\begin{reflexao}
+A regra geral para calcular o número de bits de host necessários é $H = 2^n - 2 \ge \text{hosts desejados}$. Por exemplo, na \textbf{Q13} (com 510 elementos), temos $2^9 - 2 = 510 \implies n = 9$ bits para host, o que resulta em um prefixo $/23$ ($32 - 9$) e a máscara de rede \texttt{255.255.254.0}. Compreenda a lógica, não decore apenas os números da prova.
+\end{reflexao}
+
+\subsection*{NAT (Revisão da Prova 2, cobrado na Q2)}
+
+O NAT (Network Address Translation) traduz a tupla \texttt{(IP privado, porta)} para \texttt{(IP público, porta)} na borda da rede. Os dois benefícios fundamentais exigidos em prova são:
+\begin{itemize}
+    \item \textbf{Segurança e Privacidade:} Oculta a estrutura e topologia dos hosts da rede privada. Agentes externos não podem endereçar ou iniciar conexões diretas para os hosts internos sem regras explícitas.
+    \item \textbf{Economia e Escalabilidade:} Permite que múltiplos computadores em uma rede local compartilhem um único (ou poucos) endereço IP público, mitigando o esgotamento do IPv4.
+\end{itemize}
+
+\hrulefill
+
+\section{6.1 --- Serviços da Camada de Enlace}
+
+Enquanto a camada de rede é responsável por guiar o datagrama da origem ao destino fim-a-fim, a camada de enlace é responsável por mover o datagrama \textbf{nó-a-nó} através de um único enlace físico (host $\leftrightarrow$ switch, switch $\leftrightarrow$ roteador, roteador $\leftrightarrow$ roteador). 
+
+Os principais serviços fornecidos são:
+\begin{itemize}
+    \item \textbf{Enquadramento (Framing):} Encapsula o datagrama de rede em um \textbf{quadro} (frame), delimitando seu início e fim e adicionando cabeçalhos de enlace.
+    \item \textbf{Acesso ao Enlace:} Gerenciado por protocolos MAC (Medium Access Control) --- definem as regras de transmissão em meios compartilhados (este tópico está no 6.3, fora do escopo da prova).
+    \item \textbf{Entrega Confiável:} Garante a transmissão sem erros entre nós vizinhos. É comum em enlaces propensos a erros (como redes sem fio), mas frequentemente omitido em enlaces de fibra óptica ou par trançado de baixo ruído para otimizar desempenho.
+    \item \textbf{Detecção e Correção de Erros:} Identifica e trata bits invertidos por ruído ou atenuação de sinal (Seção 6.2).
+\end{itemize}
+
+\paragraph{Onde ocorre a implementação?}
+Diferente das camadas superiores, que rodam quase inteiramente em software no sistema operacional, a camada de enlace é implementada no \textbf{adaptador de rede (NIC - Network Interface Card)}. Ela opera na fronteira entre hardware (transmissores, receptores, lógica ASIC) e software/firmware do driver da placa.
+
+\begin{pratico}
+Esta natureza ``híbrida'' explica por que o endereço físico MAC é gravado diretamente na memória física (ROM) da placa de rede pelo fabricante, enquanto o endereço IP (camada de rede) é puramente lógico e atribuído em tempo de execução via software (como DHCP). Esta distinção conceitual é crucial para provas.
+\end{pratico}
+
+\hrulefill
+
+\section{6.2 --- Detecção e Correção de Erros}
+
+Os sinais transmitidos no canal físico sofrem atenuação e ruído, o que pode inverter bits. Para lidar com isso, aplicam-se três principais técnicas de detecção/correção, listadas abaixo por ordem de robustez:
+
+\subsection{Paridade}
+\begin{itemize}
+    \item \textbf{Paridade Simples (1 bit):} Adiciona um bit extra de forma que o número total de bits ``1'' no quadro seja par (paridade par) ou ímpar (paridade ímpar). \textbf{Apenas detecta} erros, e apenas se um número \emph{ímpar} de bits for alterado. É um mecanismo muito fraco.
+    \item \textbf{Paridade Bidimensional (2D):} Organiza os dados em uma matriz de linhas e colunas, calculando a paridade individual de cada linha e de cada coluna. Permite \textbf{detectar e corrigir} erros de 1 único bit. A interseção da linha e da coluna que violaram a paridade revela a posição exata do bit invertido, permitindo que o receptor o corrija localmente. É o exemplo clássico de \textbf{FEC (Forward Error Correction)}.
+\end{itemize}
+
+\subsection{Checksum da Internet}
+Consiste na soma em complemento de um de palavras de 16 bits. É amplamente utilizado na camada de transporte (TCP/UDP) e de rede (IPv4), mas \textbf{raramente na camada de enlace}. O checksum é considerado computacionalmente leve, porém \textbf{fraco} contra múltiplos erros no enlace, pois alterações simétricas de bits podem se anular mutuamente e passar despercebidas.
+
+\subsection{CRC --- Cyclic Redundancy Check (Código de Redundância Cíclica)}
+É o padrão industrial altamente robusto utilizado em redes reais como \textbf{Ethernet (IEEE 802.3)} e \textbf{Wi-Fi (IEEE 802.11)}.
+
+\paragraph{Funcionamento:}
+Dado um conjunto de dados $D$ com $d$ bits e um polinômio gerador $G$ de $r+1$ bits acordado entre as partes, o transmissor calcula um código de preenchimento $R$ de $r$ bits tal que a concatenação $\langle D, R \rangle$ (que representa $D \cdot 2^r \oplus R$) seja exatamente divisível por $G$ em aritmética módulo 2.
+
+Portanto:
+\[
+R = \text{resto}\left[ \frac{D \cdot 2^r}{G} \right] \pmod 2
+\]
+
+\paragraph{Demonstração Passo a Passo da Divisão:}
+Considere $D = 101110$ ($d=6$) e $G = 1001$ ($r=3$, pois $G$ tem 4 bits).
+
+\begin{enumerate}
+    \item Adicione $r=3$ zeros ao final de $D$: $D \cdot 2^3 = 101110000$.
+    \item Realize a divisão utilizando a operação lógica XOR (sem ``vai-um'' ou ``pega-emprestado''):
+\end{enumerate}
+
+\begin{verbatim}
+      101110000 | 1001
+    ^ 1001      | ------
+      ----      | 101101 (quociente, descartado)
+      001010
+      ^ 0000
+        ----
+        1010
+      ^ 1001
+        ----
+        00110
+        ^ 0000
+          ----
+          1100
+        ^ 1001
+          ----
+          01010
+          ^ 1001
+            ----
+            0011  -> O resto R possui r=3 bits, logo R = 011
+\end{verbatim}
+
+\begin{enumerate}
+    \setcounter{enumi}{2}
+    \item O transmissor envia o quadro concatenado: $\langle D, R \rangle = 101110\mathbf{011}$.
+    \item \textbf{No Receptor:} O receptor recebe os bits e os divide por $G$. Se o resto for exatamente zero, assume-se que a transmissão ocorreu sem erros. Se o resto for diferente de zero, um erro é detectado.
+\end{enumerate}
+
+\begin{nota}
+\textbf{Propriedade importante para prova (V/F):} O algoritmo CRC de grau $r$ garante a detecção de todos os erros em rajada (\emph{burst errors}) de tamanho menor ou igual a $r$ bits. No quadro Ethernet, se o receptor detecta um erro de CRC, ele \textbf{descarta o quadro de forma silenciosa} (não retransmite; a retransmissão, se houver, será executada por protocolos confiáveis da camada de transporte, como o TCP).
+\end{nota}
+
+\hrulefill
+
+\section{6.4 --- Redes Locais (LANs): Endereçamento, ARP e Switches}
+
+Esta seção aborda como os dispositivos em redes locais são identificados e como os dados são entregues fisicamente dentro do mesmo segmento lógico de rede.
+
+\subsection{Endereço MAC vs. Endereço IP}
+
+A distinção entre os endereços da camada de enlace e da camada de rede é um assunto frequente nas avaliações. Veja o resumo estruturado na Tabela~\ref{tab:mac_vs_ip}.
+
+\begin{table}[h!]
+\centering
+\caption{Comparação entre Endereço MAC e Endereço IP}
+\label{tab:mac_vs_ip}
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+\textbf{Propriedade} & \textbf{Endereço MAC} & \textbf{Endereço IP} \\
+\midrule
+\textbf{Camada} & Enlace (Camada 2 - L2) & Rede (Camada 3 - L3) \\
+\textbf{Tamanho} & 48 bits (representação hexadecimal) & 32 bits (representação decimal pontuada) \\
+\textbf{Estrutura} & \textbf{Plana} (único para cada adaptador físico) & \textbf{Hierárquica} (dividido em Rede + Host) \\
+\textbf{Função} & Encaminhar quadros entre interfaces locais & Roteamento e encaminhamento global fim-a-fim \\
+\textbf{Portabilidade} & Portável (o MAC permanece o mesmo se mudar de rede) & Não-portável (muda conforme a sub-rede atual) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{reflexao}
+\textbf{Por que não usamos apenas o MAC globalmente?} (Questão clássica de prova). Como o endereço MAC possui estrutura plana, ele não carrega nenhuma informação topológica. Se o roteamento na Internet utilizasse endereços MAC, cada roteador no núcleo da rede precisaria manter uma tabela com bilhões de entradas individuais (uma para cada placa de rede existente no mundo), o que inviabilizaria o tráfego. O endereço IP hierárquico, por sua vez, permite a \textbf{agregação de rotas} via CIDR, reduzindo as tabelas de roteamento global a apenas algumas centenas de milhares de prefixos.
+\end{reflexao}
+
+\subsection{ARP --- Address Resolution Protocol}
+
+O protocolo ARP é o responsável por traduzir a informação lógica da camada superior em informação física da camada de enlace. Ele responde à pergunta: \emph{``Conheço o IP do meu vizinho na mesma sub-rede; qual é o seu endereço MAC físico?''}
+
+\paragraph{Mecanismo de Funcionamento:}
+\begin{enumerate}
+    \item Cada nó mantém localmente uma \textbf{Tabela ARP} que mapeia pares \texttt{<IP, MAC>} com um tempo de vida (\emph{TTL}) associado (tipicamente 20 minutos).
+    \item Se o nó origem deseja enviar um dado e não encontra o mapeamento na sua tabela, ele realiza um \textbf{ARP Request} enviado em broadcast físico (\texttt{FF-FF-FF-FF-FF-FF}).
+    \item O host que possui o IP solicitado responde diretamente à origem com um \textbf{ARP Reply} em unicast (enviado diretamente para o MAC do solicitante).
+    \item O nó de origem atualiza sua tabela local e envia o quadro.
+\end{enumerate}
+
+\begin{nota}
+\textbf{Pegadinha de V/F crucial de prova:} \emph{``Sempre que um host da rede A precisar enviar um datagrama a um host da rede B (em outra sub-rede), ele enviará um ARP Request em broadcast para descobrir o MAC do destino final.''} $\to$ \textbf{FALSO}.
+O ARP é estritamente \textbf{local à sub-rede}. Para enviar a um destino externo, o host de origem faz o ARP Request para obter o MAC do seu \textbf{gateway padrão} (a interface local do roteador). O ARP nunca cruza as fronteiras do roteador.
+\end{nota}
+
+\subsection{Quadro Ethernet}
+
+O encapsulamento na camada de enlace produz o quadro Ethernet. Sua estrutura básica de campos é a seguinte:
+\[
+\boxed{\text{Preâmbulo (8 bytes)}} \ \boxed{\text{MAC Destino (6 B)}} \ \boxed{\text{MAC Origem (6 B)}} \ \boxed{\text{Tipo (2 B)}} \ \boxed{\text{Dados (Payload)}} \ \boxed{\text{CRC (4 B)}}
+\]
+
+\begin{itemize}
+    \item \textbf{Preâmbulo:} 7 bytes contendo a sequência alternada \texttt{10101010} e 1 byte final \texttt{10101011}. É utilizado para sincronizar os relógios físicos do receptor com os do transmissor.
+    \item \textbf{Endereços MAC:} Permitem que a placa de rede receptora inspecione o destino. Se o MAC destino coincidir com o seu próprio MAC ou for um broadcast (\texttt{FF...FF}), ela aceita e repassa os dados para a camada superior; caso contrário, a placa \textbf{descarta} o quadro silenciosamente em hardware.
+    \item \textbf{Tipo:} Indica qual protocolo da camada de rede deve receber o payload (geralmente IP ou ARP).
+    \item \textbf{CRC:} Contém o código de redundância cíclica para detecção de erros físicos.
+\end{itemize}
+
+\subsection{Switches e Auto-aprendizado (Self-learning)}
+
+O switch é um dispositivo ativo da camada de enlace (L2), transparente aos hosts e do tipo \emph{plug-and-play}. Ele gerencia o encaminhamento inteligente de quadros através de uma \textbf{tabela de comutação} (ou tabela MAC), que mapeia a tripla \texttt{<Endereço MAC, Interface física, TTL>}.
+
+A tabela é populada dinamicamente através do processo de \textbf{auto-aprendizado}:
+\begin{itemize}
+    \item \textbf{Aprender:} Sempre que um quadro chega na interface $x$, o switch extrai o \textbf{MAC de origem} e registra que aquele dispositivo está conectado à porta $x$.
+    \item \textbf{Filtração e Encaminhamento:} O switch examina o \textbf{MAC de destino}:
+    \begin{itemize}
+        \item Se o MAC destino está associado à \textbf{mesma porta} por onde o quadro entrou $\to$ o switch \textbf{descarta} o quadro (filtragem física, pois o destino já deve ter recebido o sinal no mesmo segmento físico).
+        \item Se o MAC destino está associado a uma \textbf{porta diferente} $y$ $\to$ o switch \textbf{encaminha} o quadro especificamente pela porta $y$ (unicast direto).
+        \item Se o MAC destino \textbf{não está na tabela} ou é broadcast $\to$ o switch faz \textbf{flooding} (inunda todas as interfaces ativas, exceto a porta de entrada).
+    \end{itemize}
+\end{itemize}
+
+\begin{reflexao}
+\textbf{Comparação Switch vs. Roteador (Muito comum em V/F):}
+\begin{itemize}
+    \item Ambos utilizam a técnica de armazenamento e envio (\emph{store-and-forward}).
+    \item O \textbf{switch} opera estritamente na \textbf{Camada 2}, toma decisões baseado no MAC e constrói suas tabelas via auto-aprendizado de tráfego. Ele \emph{não} divide domínios de broadcast (broadcasts são inundados para todas as portas do switch).
+    \item O \textbf{roteador} opera na \textbf{Camada 3}, toma decisões baseado no endereço IP e constrói suas tabelas com algoritmos de roteamento complexos (OSPF, BGP). Ele \textbf{quebra domínios de broadcast} (um broadcast em uma porta não se propaga para outras).
+\end{itemize}
+\end{reflexao}
+
+\subsection{Roteamento entre Sub-redes: Comportamento dos Cabeçalhos}
+
+Esta é a essência do funcionamento prático de redes que cai nas questões \textbf{Q3} e \textbf{Q4}. Ao enviar dados entre redes distintas:
+\begin{center}
+    \textbf{Os endereços IP (origem e destino) NUNCA mudam ao longo do trajeto.} \\
+    \textbf{Os endereços MAC (origem e destino) MUDAM a cada salto físico.}
+\end{center}
+
+Considere a topologia da Figura~\ref{fig:roteamento_subredes}. O Host A envia um pacote para o Host C através do Roteador R1.
+
+\begin{figure}[h!]
+\centering
+\resizebox{0.95\textwidth}{!}{
+\begin{tikzpicture}[
+    host/.style={rectangle, draw=blue!70, fill=blue!5, thick, rounded corners, minimum width=2.2cm, minimum height=1.2cm, align=center, font=\small},
+    router/.style={circle, draw=red!70, fill=red!5, thick, minimum size=1.8cm, align=center, font=\small},
+    switch/.style={rectangle, draw=gray!70, fill=gray!10, thick, minimum width=1.8cm, minimum height=1.0cm, align=center, font=\small},
+    link/.style={draw=gray!80, thick, double}
+]
+    % Nós com distâncias manuais para evitar sobreposição de textos longos de MAC
+    \node[host] (A) {Host A\\IP: \texttt{192.228.17.33}\\MAC: \texttt{AA:AA:AA:AA:AA:AA}};
+    \node[switch, right=1.0cm of A] (SW1) {Switch 1\\(LAN X)};
+    \node[router, right=2.8cm of SW1] (R) {Roteador\\R1};
+    \node[switch, right=2.8cm of R] (SW2) {Switch 2\\(LAN Y)};
+    \node[host, right=1.0cm of SW2] (C) {Host C\\IP: \texttt{192.228.17.65}\\MAC: \texttt{CC:CC:CC:CC:CC:CC}};
+    
+    % Conexões com quebra de linha nos nós de texto para maior legibilidade
+    \draw[link] (A) -- (SW1);
+    \draw[link] (SW1) -- node[above=2pt, align=center, font=\tiny] {IF X: \texttt{.62}\\MAC: \texttt{EE:EE:EE:EE:EE:EE}} (R);
+    \draw[link] (R) -- node[above=2pt, align=center, font=\tiny] {IF Y: \texttt{.94}\\MAC: \texttt{FF:FF:FF:FF:FF:FF}} (SW2);
+    \draw[link] (SW2) -- (C);
+    
+    % Caixas de subrede
+    \node[draw=blue!30, dashed, fill=blue!5, fill opacity=0.05, rounded corners, fit=(A) (SW1), inner sep=15pt, label={[font=\bfseries]above:Sub-rede X (\texttt{192.228.17.32/27})}] {};
+    \node[draw=orange!30, dashed, fill=orange!5, fill opacity=0.05, rounded corners, fit=(SW2) (C), inner sep=15pt, label={[font=\bfseries]above:Sub-rede Y (\texttt{192.228.17.64/27})}] {};
+\end{tikzpicture}
+}
+\caption{Cenário de roteamento entre duas sub-redes distintas via Roteador R1.}
+\label{fig:roteamento_subredes}
+\end{figure}
+
+O ciclo de vida do cabeçalho do pacote trafegado é detalhado na Tabela~\ref{tab:cabecalhos_salto}.
+
+\begin{table}[h!]
+\centering
+\caption{Valores de cabeçalho nos diferentes estágios da transmissão}
+\label{tab:cabecalhos_salto}
+\begin{tabularx}{\textwidth}{lXXXX}
+\toprule
+\textbf{Estágio} & \textbf{IP Origem} & \textbf{IP Destino} & \textbf{MAC Origem} & \textbf{MAC Destino} \\
+\midrule
+\textbf{Salto 1 (A $\to$ R1)} & \texttt{192.228.17.33} & \texttt{192.228.17.65} & \texttt{AA:AA:AA:AA:AA:AA} & \texttt{EE:EE:EE:EE:EE:EE} \\
+\textbf{Salto 2 (R1 $\to$ C)} & \texttt{192.228.17.33} & \texttt{192.228.17.65} & \texttt{FF:FF:FF:FF:FF:FF} & \texttt{CC:CC:CC:CC:CC:CC} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{pratico}
+\textbf{Lógica da tabela de roteamento no Roteador R1 (Q4):}
+Para poder rotear esses datagramas, a tabela de encaminhamento local do roteador R1 precisará associar cada prefixo à interface física de saída correta. A configuração seria:
+\begin{itemize}
+    \item Destino: \texttt{192.228.17.32/27} $\implies$ Interface de Saída: \textbf{LAN X}.
+    \item Destino: \texttt{192.228.17.64/27} $\implies$ Interface de Saída: \textbf{LAN Y}.
+\end{itemize}
+\end{pratico}
+
+\subsection{VLANs --- Virtual Local Area Networks (Redes Locais Virtuais)}
+
+\paragraph{Motivação:}
+Em uma LAN tradicional baseada em switches físicos e roteadores de borda, ocorrem limitações severas de infraestrutura:
+\begin{itemize}
+    \item \textbf{Falta de Isolamento de Tráfego:} Qualquer tráfego de broadcast (como requisições ARP ou DHCP) é espalhado para todos os hosts da rede. Isso gera sobrecarga de processamento nas placas de rede e expõe riscos de segurança (um invasor na rede pode monitorar facilmente broadcasts de outros setores).
+    \item \textbf{Inflexibilidade Física:} Agrupar hosts por departamento (por exemplo, Engenharia vs. Recursos Humanos) exige mantê-los fisicamente conectados nos mesmos equipamentos físicos, dificultando a reorganização lógica quando colaboradores mudam de sala.
+\end{itemize}
+
+\paragraph{Solução por VLAN:}
+A VLAN permite a segmentação de uma única infraestrutura física de switch em \textbf{múltiplos domínios de broadcast lógicos}. Switches compatíveis com VLAN associam portas a IDs de VLANs específicas. Um broadcast enviado por um host na VLAN 10 nunca chegará à VLAN 20, mesmo que ambos compartilhem o mesmo switch de hardware.
+
+\paragraph{Interligação de Múltiplos Switches (Trunking):}
+Quando as VLANs se estendem por múltiplos switches físicos, utiliza-se uma \textbf{porta de tronco (trunk port)} para interligá-los. Para diferenciar a qual rede o quadro pertence durante o transporte entre os switches, adiciona-se ao quadro uma tag de cabeçalho padrão \textbf{IEEE 802.1Q} (que inclui o campo VLAN ID de 12 bits) inserida diretamente após os campos de endereço MAC. O receptor do outro switch remove a tag e entrega o quadro original à respectiva VLAN.
+
+\begin{nota}
+\textbf{Resposta estruturada para a Q2 (Estilo Datacenter):}
+Em ambientes de computação em nuvem e datacenters multi-inquilino (\emph{multi-tenant}), o uso conjunto de VLAN e NAT é padrão:
+\begin{itemize}
+    \item As \textbf{VLANs} garantem o \textbf{isolamento de tráfego L2} e o desempenho, agrupando servidores de um mesmo cliente e barrando vazamento de tráfego broadcast/ARP para vizinhos de infraestrutura.
+    \item O \textbf{NAT} atua na borda realizando a ocultação lógica de endereços, bloqueando tentativas de varredura ou conexões externas não autorizadas, além de otimizar a alocação de IPs públicos.
+\end{itemize}
+\end{nota}
+
+\hrulefill
+
+\section{6.5 --- MPLS (Multi-Protocol Label Switching)}
+
+O MPLS é uma tecnologia de encaminhamento IP de alto desempenho criada para simplificar e acelerar o roteamento de pacotes através de redes de operadoras.
+
+\begin{itemize}
+    \item \textbf{Princípio de Operação:} Em vez de realizar a busca clássica na tabela de roteamento pelo prefixo mais longo (\emph{longest prefix match}), o MPLS insere um cabeçalho de rótulo (\emph{label}) de tamanho fixo de 20 bits. O cabeçalho é posicionado \textbf{entre o cabeçalho da camada de enlace (Ethernet) e o cabeçalho IP} (frequentemente apelidado de protocolo de camada ``2.5''). O datagrama IP permanece intacto.
+    \item \textbf{LSR (Label Switching Router):} Os roteadores da rede MPLS encaminham os pacotes analisando estritamente o rótulo de entrada e trocando-o por um rótulo de saída definido na tabela MPLS local, sem inspecionar o cabeçalho de rede IP de destino.
+    \item \textbf{Flexibilidade e Engenharia de Tráfego:} O grande diferencial cobrado em avaliações é que as decisões de encaminhamento no MPLS podem diferir daquelas que seriam feitas pelo protocolo IP padrão. Isso permite:
+    \begin{enumerate}
+        \item \textbf{Traffic Engineering (Engenharia de Tráfego):} Direcionar fluxos de dados com o mesmo endereço de destino por caminhos físicos distintos para balancear a carga da rede (por exemplo, tráfego de voz por um caminho rápido e dados volumosos por outro). No roteamento IP convencional, todos os pacotes para um destino obrigatoriamente seguiriam o mesmo caminho mínimo calculado.
+        \item \textbf{Recuperação Rápida de Falhas:} Pré-calcular rotas de contingência (\emph{fast reroute}) para desviar o tráfego instantaneamente em caso de falha de enlaces de fibra.
+    \end{enumerate}
+\end{itemize}
+
+\hrulefill
+
+\section{6.6 --- Redes de Datacenter}
+
+Datacenters modernos de grande escala acomodam centenas de milhares de servidores interconectados. A topologia física clássica segue uma hierarquia de comutação baseada em árvore:
+\[
+\text{Server Blades} \to \text{TOR (Top-of-Rack - Acesso)} \to \text{Tier-2 (Agregação)} \to \text{Tier-1 (Core)} \to \text{Border Routers}
+\]
+
+Os tópicos críticos desta arquitetura para exames são:
+\begin{itemize}
+    \item \textbf{Multipath (Interconexão Rica):} Ao contrário de redes empresariais tradicionais que evitam caminhos paralelos para prevenir loops L2, datacenters utilizam topologias de malha densa (como a arquitetura \emph{Fat-Tree}). Isso cria múltiplos caminhos independentes entre racks para obter \textbf{alta vazão} (com balanceamento de tráfego) e \textbf{tolerância a falhas} (redundância total de switches).
+    \item \textbf{Load Balancer (Balanceador de Carga):} Atua como um ponto de entrada para requisições externas. Ele distribui os pacotes de tráfego de entrada de forma balanceada entre os servidores replicados na infraestrutura interna, \textbf{ocultando a topologia física} dos clientes externos (o cliente interage apenas com o IP público do load balancer).
+\end{itemize}
+
+\begin{reflexao}
+\textbf{Tendência tecnológica crítica em Datacenters:}
+Os datacenters modernos foram os grandes viabilizadores do \textbf{SDN} em produção (como os controladores Orion e Jupiter do Google). Como os datacenters são domínios administrativos únicos e gigantescos, a engenharia de redes substituiu protocolos clássicos e distribuídos por software centralizado de SDN para gerenciar caminhos, balanceamento de tráfego de transporte (usando ECN/DCTCP) e acesso direto à memória remota em hardware (como RoCE/RDMA). É a tendência de centralizar a gerência e deixar o hardware atuar como comutadores velozes e simplificados.
+\end{reflexao}
+
+\hrulefill
+
+\section*{Fechamento: Relação com a Prova-base}
+
+A Tabela~\ref{tab:relacao_prova_cap6} apresenta a amarração do conteúdo deste dia de estudos com os problemas da sua prova-base.
+
+\begin{table}[h!]
+\centering
+\caption{Mapeamento dos tópicos do Capítulo 6 com a Prova-base}
+\label{tab:relacao_prova_cap6}
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+\textbf{Questão} & \textbf{Conceito Aplicado} & \textbf{Resolução} \\
+\midrule
+\textbf{Q1 (V/F)} & ARP entre sub-redes & O ARP é local; para destinos externos, resolve-se o MAC da interface do gateway local. \\
+\textbf{Q1 (V/F)} & Switch vs. Roteador & Decisão L2 (MAC + auto-aprendizado) vs. L3 (IP + algoritmos de roteamento). \\
+\textbf{Q2} & VLAN e NAT no Datacenter & VLAN fornece isolamento de tráfego L2 e segurança; NAT oculta a topologia IP e poupa endereços. \\
+\textbf{Q4} & Sub-rede $/27$ e Roteamento & Divisão da máscara \texttt{255.255.255.224} e mapeamento dos caminhos de rede. \\
+\textbf{Base da Q3} & Fluxo de pacotes & Comportamento dinâmico: IP fixo de ponta a ponta e MAC mudando a cada salto. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\end{document}

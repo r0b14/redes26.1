@@ -1,0 +1,8 @@
+{
+  "rules": [
+    "Sempre responda e entregue código, explicações e comentários em Português do Brasil (pt-br).",
+    "Ao converter arquivos Markdown (.md) para LaTeX (.tex) neste projeto, utilize obrigatoriamente as diretrizes contidas em .ai_instructions/instructions.md e o template .ai_instructions/template.tex.",
+    "Mantenha a padronização visual com os tcolorboxes customizados (reflexao, nota, pratico, analogia).",
+    "Garanta que os diagramas TikZ possuam \\resizebox para não estourar as margens horizontais e quebras de linha com align=center nos rótulos de conexões quando houver dados longos como IPs ou MACs."
+  ]
+}
