@@ -1,0 +1,643 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazilian]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{geometry}
+\geometry{a4paper, top=1cm, bottom=1.3cm, left=1.5cm, right=1.5cm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{colortbl}
+\usepackage{tcolorbox}
+\usepackage{tikz}
+\usepackage{microtype}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\usetikzlibrary{positioning, arrows.meta, fit, backgrounds, calc}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    pdftitle={Gabarito Completo e Comentado --- Prova 3},
+    pdfpagemode=FullScreen,
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[R]{\thepage}
+
+% ---- Caixas padrao (sem sharp corners=rounded, que e invalido; usar arc=Xpt) ----
+\newtcolorbox{reflexao}{
+    colback=yellow!5!white, colframe=yellow!60!black,
+    title=\textbf{Reflexao Critica},
+    arc=3pt, boxrule=0.8pt, fonttitle=\bfseries, coltitle=black
+}
+\newtcolorbox{nota}{
+    colback=blue!5!white, colframe=blue!60!black,
+    title=\textbf{Nota / Atencao},
+    arc=3pt, boxrule=0.8pt, fonttitle=\bfseries, coltitle=white
+}
+\newtcolorbox{pratico}{
+    colback=green!5!white, colframe=green!60!black,
+    title=\textbf{Aplicacao Pratica},
+    arc=3pt, boxrule=0.8pt, fonttitle=\bfseries, coltitle=white
+}
+\newtcolorbox{analogia}{
+    colback=purple!5!white, colframe=purple!60!black,
+    title=\textbf{Analogia},
+    arc=3pt, boxrule=0.8pt, fonttitle=\bfseries, coltitle=white
+}
+
+% ---- Caixas exclusivas do gabarito ----
+\definecolor{corexpl}{RGB}{50,50,80}
+\definecolor{corresp}{RGB}{0,110,60}
+\definecolor{corcola}{RGB}{30,30,30}
+
+\newtcolorbox{explicacao}{
+    colback=gray!5!white,
+    colframe=corexpl!70!black,
+    title=\textbf{(A) Explicacao do Topico},
+    arc=3pt,
+    boxrule=0.8pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+\newtcolorbox{resposta}{
+    colback=corresp!5!white,
+    colframe=corresp,
+    title=\textbf{(B) Resposta-Gabarito},
+    arc=3pt,
+    boxrule=1.1pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+\newtcolorbox{colafinal}{
+    colback=gray!10!white,
+    colframe=corcola,
+    title=\textbf{Cola Final --- Revisao de 1 Minuto},
+    arc=3pt,
+    boxrule=1.5pt,
+    fonttitle=\bfseries\large,
+    coltitle=white
+}
+
+\title{\textbf{Gabarito Completo e Comentado --- Prova 3}\\
+\large Redes de Computadores (Kurose \& Ross, 9\textordfeminine\ ed.)\\
+\normalsize Plano de Controle $\cdot$ Camada de Enlace $\cdot$ Introducao as Redes Sem Fio}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{fancy}
+
+\noindent\textit{Este gabarito cobre as 7 questoes da Prova~3. Cada questao apresenta \textbf{(A) a explicacao completa do topico} e \textbf{(B) a resposta-modelo} no formato cobrado. A Q7 (CSMA/CD) esta fora do escopo da P3 --- inclusa apenas por completude.}
+
+\section*{Mapa da Prova}
+
+\begin{center}
+\begin{tabular}{clll}
+\toprule
+\textbf{Q} & \textbf{Tema} & \textbf{Tipo} & \textbf{Prioridade} \\
+\midrule
+1 & Plano de controle, SDN, ARP, algoritmos de roteamento & V/F & Alta \\
+2 & NAT + VLAN em datacenter & Dissertativa + figura & Media \\
+3 & \textit{Um dia na vida de uma requisicao web} & Integradora (14 itens) & \textbf{Altissima} \\
+4 & Cenario com 2 sub-redes, tabela de encaminhamento (/27) & Calculo + dissertativa & Alta \\
+5 & Evolucao das redes moveis 1G $\to$ 5G & Dissertativa & Media \\
+6 & Estado de enlace (Dijkstra) e vetor de distancias (B-F) & Conceitual + calculo & \textbf{Altissima} \\
+7 & CSMA/CD & Dissertativa & {[}!{]} Fora do escopo \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\hrulefill
+
+% ================================================================
+\section*{Questao 1 --- V/F: Plano de Controle, SDN, ARP e Roteamento}
+% ================================================================
+
+\begin{explicacao}
+
+\paragraph{Encapsulamento dos protocolos de controle}
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{Protocolo} & \textbf{Plano} & \textbf{Encapsulamento} & \textbf{Detalhe} \\
+\midrule
+ICMP  & Controle & Direto sobre \textbf{IP} (protocolo~1)  & Internet \textit{Control} Message Protocol \\
+OSPF  & Controle & Direto sobre \textbf{IP} (protocolo~89) & \textit{Link-state}, intra-AS \\
+RIP   & Controle & Sobre \textbf{UDP} (porta~520)           & \textit{Distance vector}, intra-AS \\
+BGP   & Controle & Sobre \textbf{TCP} (porta~179)           & \textit{Path vector}, inter-AS \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{As 4 caracteristicas da arquitetura SDN}
+\begin{enumerate}[noitemsep, label=\arabic*.]
+    \item Encaminhamento generalizado baseado em fluxo (OpenFlow, \textit{match + action})
+    \item \textbf{Separacao entre plano de dados e plano de controle} --- a mais ``esquecida'' nas provas
+    \item Funcoes de controle externas aos comutadores (controlador em software)
+    \item Rede programavel via aplicacoes de controle
+\end{enumerate}
+
+\paragraph{ARP entre sub-redes diferentes}
+
+O ARP resolve IP$\to$MAC \textbf{apenas no mesmo segmento de enlace}. Para um destino em outra sub-rede, o host entrega o quadro ao \textbf{gateway (roteador)}: faz ARP pelo MAC do gateway, nao do destino final. Alem disso, gracas ao \textbf{cache ARP} (TTL $\approx$ 20 min), o ARP \textit{nao} e disparado a cada envio.
+
+\paragraph{Familias de algoritmos de roteamento}
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{Familia} & \textbf{Algoritmo} & \textbf{Protocolo} & \textbf{Escopo} \\
+\midrule
+Estado de enlace    & Dijkstra     & \textbf{OSPF} & intra-AS \\
+Vetor de distancias & Bellman-Ford & \textbf{RIP}  & intra-AS \\
+Vetor de caminhos   & ---          & \textbf{BGP}  & inter-AS \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{explicacao}
+
+\begin{resposta}
+\textbf{Todas as afirmacoes sao FALSAS:}
+
+\medskip
+\textbf{(F)} \textit{``ICMP, OSPF e BGP sao do plano de controle e encapsulados diretamente em IP ou quadro de enlace.''}\\
+$\to$ ICMP e OSPF vao direto sobre IP, mas o \textbf{BGP roda sobre TCP (porta~179)}, nao diretamente no datagrama IP. A afirmacao e falsa pelo BGP.
+
+\medskip
+\textbf{(F)} \textit{``O SDN tem apenas 3 caracteristicas.''}\\
+$\to$ Sao \textbf{4}; a afirmacao omite a \textbf{separacao entre plano de dados e plano de controle}, que e o pilar arquitetural central do SDN.
+
+\medskip
+\textbf{(F)} \textit{``Sempre que um host de A enviar para um host de B (em outra rede), faz ARP para todos da rede A.''}\\
+$\to$ Como B esta em \textbf{outra sub-rede}, o host faz ARP pelo \textbf{MAC do gateway} (roteador de 1$^{\circ}$ salto), nao do host B. Ademais, o \textbf{cache ARP} evita que isso ocorra a cada envio.
+
+\medskip
+\textbf{(F)} \textit{``OSPF usa estado de enlace; RIP usa vetor de caminhos.''}\\
+$\to$ OSPF com estado de enlace esta correto, mas o \textbf{RIP usa vetor de distancias} (Bellman-Ford, saltos). Vetor de caminhos (\textit{path vector}) e o \textbf{BGP}.
+\end{resposta}
+
+\hrulefill
+
+% ================================================================
+\section*{Questao 2 --- NAT + VLAN no Datacenter}
+% ================================================================
+
+\begin{explicacao}
+
+\paragraph{NAT (Network Address Translation)}
+
+O NAT traduz a tupla \texttt{(IP privado, porta)} $\leftrightarrow$ \texttt{(IP publico, porta)} na borda da rede, mantendo uma tabela de traducao com estado.
+
+\begin{center}
+\begin{tikzpicture}[
+    caixa/.style={rectangle, draw=gray!70, fill=gray!8, rounded corners,
+                minimum width=2.6cm, minimum height=1.0cm, align=center, font=\small},
+    seta/.style={-Stealth, thick},
+    setab/.style={Stealth-, thick, draw=blue!60, dashed}
+]
+    \node[caixa, fill=blue!10] (H)   {Host Interno\\\small\texttt{10.0.0.5:3345}};
+    \node[caixa, fill=orange!10, right=2.2cm of H]   (NAT) {Roteador NAT\\\small\texttt{200.1.1.1}};
+    \node[caixa, fill=green!10,  right=2.2cm of NAT] (NET) {Internet};
+
+    \draw[seta]  (H)   -- node[above, font=\tiny\bfseries] {src = \texttt{10.0.0.5:3345}}  (NAT);
+    \draw[seta]  (NAT) -- node[above, font=\tiny\bfseries] {src = \texttt{200.1.1.1:5001}} (NET);
+    \draw[setab] ($(H.south)+(0,-0.5)$)   -- node[below, font=\tiny\bfseries, text=blue!70]
+                 {dst = \texttt{10.0.0.5:3345}}  ($(NAT.south)+(0,-0.5)$);
+    \draw[setab] ($(NAT.south)+(0,-0.5)$) -- node[below, font=\tiny\bfseries, text=blue!70]
+                 {dst = \texttt{200.1.1.1:5001}} ($(NET.south)+(0,-0.5)$);
+\end{tikzpicture}
+\par\smallskip{\small\textit{NAT: traducao de enderecos privados para IP publico na borda do datacenter.}}
+\end{center}
+
+\textbf{Beneficios do NAT no datacenter:}
+\begin{itemize}[noitemsep]
+    \item \textbf{Seguranca/privacidade:} servidores usam IP privado (\texttt{10.0.0.0/8}), invisiveis da Internet. Atacante externo nao consegue enderecaar diretamente um servidor.
+    \item \textbf{Escalabilidade:} milhares de servidores compartilham poucos IPs publicos, aliviando o esgotamento do IPv4.
+\end{itemize}
+
+\paragraph{VLAN (Virtual LAN)}
+
+A VLAN particiona um switch fisico em \textbf{multiplos dominios de broadcast logicos}. Quadros de uma VLAN nao ``vazam'' para outra sem passar por um roteador/firewall.
+
+\begin{center}
+\begin{tikzpicture}[
+    vlan/.style={rectangle, draw=gray!60, rounded corners, align=center,
+                 minimum width=2.6cm, minimum height=1.2cm, font=\small\bfseries}
+]
+    \draw[draw=gray!50, fill=gray!6, rounded corners, thick]
+        (-5.2,-1.1) rectangle (5.2,2.0);
+    \node[font=\bfseries\small, text=gray!60] at (0,1.75) {Switch Fisico (Tier-2)};
+
+    \node[vlan, fill=blue!10,   draw=blue!50]   (V10) at (-3.5,0.3) {VLAN 10\\App Servers};
+    \node[vlan, fill=green!10,  draw=green!50]  (V20) at ( 0,  0.3) {VLAN 20\\DB Servers};
+    \node[vlan, fill=orange!10, draw=orange!50] (V30) at ( 3.5,0.3) {VLAN 30\\Gerencia};
+
+    \draw[dashed, red!50, very thick]
+        ($(V10.east)+(0.15,0)$) -- node[above, font=\tiny\bfseries, text=red!60] {isolado}
+        ($(V20.west)+(-0.15,0)$);
+    \draw[dashed, red!50, very thick]
+        ($(V20.east)+(0.15,0)$) -- node[above, font=\tiny\bfseries, text=red!60] {isolado}
+        ($(V30.west)+(-0.15,0)$);
+\end{tikzpicture}
+\par\smallskip{\small\textit{VLAN: segmentacao logica dentro de um switch fisico --- broadcast na VLAN~10 nunca alcanca a VLAN~20.}}
+\end{center}
+
+\textbf{Beneficios da VLAN no datacenter:}
+\begin{itemize}[noitemsep]
+    \item \textbf{Desempenho:} confina broadcasts (ARP, DHCP) a dominios menores $\to$ menos inundacao, melhor uso da banda.
+    \item \textbf{Seguranca/isolamento:} separa \textit{tenants}/camadas (front-end, app, banco); comunicacao entre VLANs passa obrigatoriamente por roteador/firewall onde se aplicam ACLs.
+\end{itemize}
+\end{explicacao}
+
+\begin{resposta}
+``O \textbf{NAT} deve ser posicionado no \textbf{border router}: os \textit{server racks} usam \textbf{IP privado} e o NAT os mascara atras de IP(s) publico(s), melhorando \textbf{seguranca} (servidores nao enderecaveis de fora) e \textbf{escalabilidade} de enderecamento. As \textbf{VLANs} devem ser configuradas nos \textbf{Tier-2 e TOR switches}, agrupando logicamente racks por funcao (VLAN de aplicacao $\times$ VLAN de banco). Isso \textbf{isola dominios de broadcast} (menos inundacao ARP/DHCP $\to$ mais \textbf{desempenho}) e impede comunicacao direta entre camadas sensiveis sem passar por roteador/firewall (mais \textbf{seguranca}).''
+
+\medskip
+\noindent\textbf{Reflexao:} NAT atua na \textbf{borda} (perimetro norte-sul) contra o exterior; VLAN organiza e protege o \textbf{interior} (segmentacao leste-oeste). Sao mecanismos \textbf{complementares}, nao alternativos.
+\end{resposta}
+
+\hrulefill
+
+% ================================================================
+\section*{Questao 3 $\bigstar$ --- Um Dia na Vida de uma Requisicao Web}
+% ================================================================
+
+\textbf{Cenario:} cliente conecta o laptop a \textit{school network} (\texttt{68.80.2.0/24}), passa pela Comcast (\texttt{68.80.0.0/13}) e busca \texttt{www.google.com} no servidor web (\texttt{64.233.169.105}) na rede do Google (\texttt{64.233.160.0/19}).
+
+\begin{explicacao}
+
+\paragraph{Sequencia cronologica obrigatoria}
+
+\begin{center}
+\resizebox{\linewidth}{!}{
+\begin{tikzpicture}[
+    % Nome 'bloco' evita conflito com a chave interna /tikz/step (usada em grids)
+    bloco/.style={rectangle, draw=gray!70, rounded corners, align=center,
+                 minimum width=2.6cm, minimum height=1.3cm, font=\small\bfseries},
+    sub/.style={font=\scriptsize, text=blue!70, align=center},
+    seta/.style={-Stealth, very thick, draw=gray!60}
+]
+    \node[bloco,fill=blue!15,draw=blue!60]      (D)  {\textcircled{1} DHCP\\obter identidade};
+    \node[bloco,fill=cyan!12,draw=cyan!60,   right=1.2cm of D]  (A)  {\textcircled{2} ARP\\MAC do gateway};
+    \node[bloco,fill=gray!16,draw=gray!50,   right=1.2cm of A]  (SW) {\textcircled{3} Switch\\self-learning};
+    \node[bloco,fill=orange!12,draw=orange!60,right=1.2cm of SW](DN) {\textcircled{4} DNS\\nome $\to$ IP};
+    \node[bloco,fill=green!12,draw=green!60, right=1.2cm of DN] (TC) {\textcircled{5} TCP\\3-way handshake};
+    \node[bloco,fill=red!10,draw=red!60,     right=1.2cm of TC] (HT) {\textcircled{6} HTTP\\GET + Reply};
+
+    \draw[seta](D)--(A); \draw[seta](A)--(SW); \draw[seta](SW)--(DN);
+    \draw[seta](DN)--(TC); \draw[seta](TC)--(HT);
+
+    \node[sub, below=0.4cm of D]  {UDP broadcast\\FF:FF:FF:FF:FF:FF\\$\to$ IP, GW, DNS};
+    \node[sub, below=0.4cm of A]  {broadcast LAN\\resolve IP\_GW\\$\to$ MAC\_GW};
+    \node[sub, below=0.4cm of SW] {aprende MAC\\por origem\\forward/flood};
+    \node[sub, below=0.4cm of DN] {UDP$\to$IP\\OSPF/BGP\\IP = .169.105};
+    \node[sub, below=0.4cm of TC] {SYN\\SYNACK\\ACK};
+    \node[sub, below=0.4cm of HT] {HTTP GET /\\200 OK\\pagina};
+
+    \node[font=\tiny\bfseries,text=blue!60,     above=0.3cm of D]  {Aplicacao/UDP};
+    \node[font=\tiny\bfseries,text=cyan!60,     above=0.3cm of A]  {Enlace (L2)};
+    \node[font=\tiny\bfseries,text=gray!60,     above=0.3cm of SW] {Enlace (L2)};
+    \node[font=\tiny\bfseries,text=orange!60,   above=0.3cm of DN] {Aplicacao/UDP};
+    \node[font=\tiny\bfseries,text=green!60!black,above=0.3cm of TC]{Transporte};
+    \node[font=\tiny\bfseries,text=red!60,      above=0.3cm of HT] {Aplicacao/TCP};
+\end{tikzpicture}
+}
+\par\smallskip{\small\textit{Sequencia cronologica completa do cenario 6.7 --- nunca inverter etapas.}}
+\end{center}
+
+\paragraph{Cobertura dos 14 itens}
+
+\begin{enumerate}[label=\textbf{\arabic*.}, leftmargin=*, noitemsep]
+    \item \textbf{DHCP} --- primeiro de tudo. O laptop envia DHCP (UDP$\to$IP$\to$Eth) em broadcast (\texttt{FF:FF:FF:FF:FF:FF}). O servidor DHCP no roteador responde com \textbf{ACK} contendo: IP do cliente, IP do \textbf{gateway de 1$^{\circ}$ salto} e IP do \textbf{servidor DNS}.
+    \item \textbf{ARP} --- antes de enviar qualquer quadro para fora da LAN, o cliente precisa do \textbf{MAC do roteador}. Faz \textbf{ARP request} (broadcast); o roteador responde com \textbf{ARP reply} (seu MAC).
+    \item \textbf{IP publico} --- o servidor web (\texttt{64.233.169.105}) possui IP \textbf{publico}, alcancavel globalmente, retornado pelo DNS.
+    \item \textbf{Switch (como aprende?)} --- \textbf{self-learning}: ao receber um quadro, grava \texttt{(MAC origem, porta)} na tabela de comutacao. Para encaminhar, consulta o MAC de \textbf{destino}; se desconhecido $\to$ \textbf{flooding}.
+    \item \textbf{Roteador (como encaminha?)} --- aplica \textbf{longest prefix match} sobre o \textbf{IP destino}, decrementa o \textbf{TTL} e \textbf{reencapsula} o datagrama em um novo quadro a cada salto. \textbf{[Chave:] IP destino constante fim-a-fim; MAC muda a cada salto.}
+    \item \textbf{VLAN} --- no datacenter da Google, agrupa servidores logicamente, isola broadcast e separa funcoes (front-end/app/banco).
+    \item \textbf{Broadcast/Difusao} --- ocorre no \textbf{DHCP discover} e no \textbf{ARP request} (\texttt{FF:FF:FF:FF:FF:FF}). O switch faz flooding de quadros broadcast \textbf{dentro da mesma VLAN/LAN}.
+    \item \textbf{OSPF} --- protocolo \textbf{intra-AS} (estado de enlace, Dijkstra) que constroi as tabelas de roteamento \textbf{dentro} da school network, da Comcast e da Google. Protocolo~89, direto sobre IP.
+    \item \textbf{IP privado/NAT} --- hosts internos usam IP privado atras de NAT: economiza enderecos publicos e oculta a topologia interna.
+    \item \textbf{Escalabilidade} --- provida por \textbf{CIDR} (agregacao de rotas), \textbf{DNS} (distribuido, hierarquico), hierarquia de \textbf{ASes + BGP} e \textbf{NAT/MPLS}.
+    \item \textbf{Seguranca/privacidade} --- \textbf{NAT} (oculta hosts internos), \textbf{VLAN} (isolamento), IP privado.
+    \item \textbf{NAT} --- traduz IP privado $\leftrightarrow$ publico na borda; mantém tabela \texttt{(IP priv, porta)} $\leftrightarrow$ \texttt{(IP pub, porta)}.
+    \item \textbf{BGP} --- protocolo \textbf{inter-AS} (\textit{path vector}, sobre TCP/179) que roteia os pacotes \textbf{entre} os ASes (school ISP $\to$ Comcast $\to$ Google).
+    \item \textbf{MPLS} --- comutacao por \textbf{rotulos (labels)}: encaminhamento rapido no nucleo dos provedores e \textbf{engenharia de trafego}.
+\end{enumerate}
+\end{explicacao}
+
+\begin{resposta}
+\textbf{Sequencia cronologica:} DHCP $\to$ ARP $\to$ DNS $\to$ TCP (SYN/SYNACK/ACK) $\to$ HTTP (GET/reply).
+
+\smallskip
+\textbf{Pano de fundo:} o \textbf{switch} faz self-learning e flooding; o \textbf{roteador} aplica longest prefix match, decrementa TTL e reencapsula com novos MACs a cada salto (\textbf{IP fixo fim-a-fim; MAC muda a cada salto}). O \textbf{OSPF} constroi rotas intra-AS (Dijkstra); o \textbf{BGP} faz roteamento inter-AS (\textit{path vector}, TCP/179). O \textbf{NAT} mascara hosts internos; as \textbf{VLANs} isolam broadcast no datacenter; o \textbf{MPLS} possibilita engenharia de trafego no nucleo.
+\end{resposta}
+
+\hrulefill
+
+% ================================================================
+\section*{Questao 4 --- Cenario com 2 Sub-redes e Tabela de Encaminhamento}
+% ================================================================
+
+\textbf{Dados:} Cliente K (Internet), Servidor Web B = \texttt{192.228.17.57}, mascara de R1 = \texttt{255.255.255.224}.
+
+\begin{explicacao}
+
+\paragraph{Calculo da mascara /27}
+
+O ultimo octeto de \texttt{255.255.255.224} em binario e \texttt{11100000}:
+
+\[
+\text{prefixo} = 24 + 3 = /27 \qquad\Rightarrow\qquad
+\text{hosts por sub-rede} = 2^{(32-27)} - 2 = 2^5 - 2 = \mathbf{30}
+\qquad\text{(blocos de 32)}
+\]
+
+\begin{center}
+{\small\textit{Sub-redes do cenario Q4}}\\[4pt]
+\begin{tabular}{lllll}
+\toprule
+\textbf{Sub-rede} & \textbf{End.\ de rede} & \textbf{Faixa utilizavel} & \textbf{Broadcast} & \textbf{Membros} \\
+\midrule
+\textbf{LAN~X} & \texttt{192.228.17.32/27} & \texttt{.33 -- .62} & \texttt{.63} & A=\texttt{.33}, \textbf{B=\texttt{.57}} \\
+\textbf{LAN~Y} & \texttt{192.228.17.64/27} & \texttt{.65 -- .94} & \texttt{.95} & C=\texttt{.65}, D=\texttt{.66} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Confirmacao:} \texttt{192.228.17.57} esta entre \texttt{.33} e \texttt{.62} $\Rightarrow$ o Servidor~B pertence a \textbf{LAN~X}.
+
+\paragraph{Tabela de encaminhamento de R1 (longest prefix match)}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Prefixo de destino} & \textbf{Mascara} & \textbf{Interface de saida} \\
+\midrule
+\texttt{192.228.17.32/27} (LAN~X) & \texttt{255.255.255.224} & \texttt{if0} (porta LAN~X) \\
+\texttt{192.228.17.64/27} (LAN~Y) & \texttt{255.255.255.224} & \texttt{if1} (porta LAN~Y) \\
+\texttt{0.0.0.0/0} (default)       & \texttt{0.0.0.0}         & \texttt{if2} (uplink Internet) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Fluxo de protocolos (K acessa B pela Internet)}
+
+\begin{center}
+\resizebox{\linewidth}{!}{
+\begin{tikzpicture}[
+    bloco/.style={rectangle, draw=gray!70, fill=gray!8, rounded corners,
+                 align=center, minimum width=2.5cm, minimum height=1.1cm, font=\small},
+    seta/.style={-Stealth, very thick, draw=gray!60}
+]
+    \node[bloco,fill=blue!10]    (DH){DHCP\\K obtem IP\\na sua LAN};
+    \node[bloco,fill=orange!10, right=1.0cm of DH] (DN){DNS\\resolve\\B = \texttt{.57}};
+    \node[bloco,fill=gray!15,   right=1.0cm of DN] (BG){BGP\\roteamento\\inter-AS};
+    \node[bloco,fill=purple!10, right=1.0cm of BG] (R1){Roteador R1\\longest prefix\\match $\to$ LAN~X};
+    \node[bloco,fill=cyan!10,   right=1.0cm of R1] (AR){ARP\\MAC de B\\na LAN~X};
+    \node[bloco,fill=green!10,  right=1.0cm of AR] (TC){TCP\\SYN/SYNACK\\ACK};
+    \node[bloco,fill=red!10,    right=1.0cm of TC] (HT){HTTP\\GET\\Reply};
+
+    \draw[seta](DH)--(DN); \draw[seta](DN)--(BG); \draw[seta](BG)--(R1);
+    \draw[seta](R1)--(AR); \draw[seta](AR)--(TC); \draw[seta](TC)--(HT);
+\end{tikzpicture}
+}
+\par\smallskip{\small\textit{Sequencia de protocolos do ponto de vista do Roteador R1 para a Q4.}}
+\end{center}
+
+\end{explicacao}
+
+\begin{resposta}
+\begin{enumerate}[label=\textbf{\arabic*.}, noitemsep]
+    \item \textbf{DHCP:} Cliente K obtem IP, gateway e DNS na \textbf{sua} rede local.
+    \item \textbf{DNS:} resolve o hostname do servidor $\to$ \texttt{192.228.17.57}.
+    \item \textbf{BGP:} roteamento \textbf{inter-AS} transporta o pacote pelos provedores ate o AS de R1.
+    \item \textbf{OSPF:} roteamento \textbf{intra-AS} constroi as tabelas locais dos roteadores dentro do AS de R1.
+    \item \textbf{R1 / Longest prefix match:} \texttt{.57} casa com \texttt{192.228.17.32/27} (LAN~X) $\to$ encaminha por \texttt{if0}.
+    \item \textbf{ARP:} R1 descobre o MAC de B (\texttt{.57}) na LAN~X (se nao estiver no cache) e entrega o quadro.
+    \item \textbf{TCP:} handshake SYN / SYNACK / ACK entre K e B.
+    \item \textbf{HTTP:} GET $\to$ resposta com a pagina, roteada de volta a K pelo caminho inverso.
+\end{enumerate}
+\end{resposta}
+
+\hrulefill
+
+% ================================================================
+\section*{Questao 5 --- Evolucao das Redes Moveis (1G $\to$ 5G)}
+% ================================================================
+
+\begin{explicacao}
+
+\begin{center}
+\resizebox{\linewidth}{!}{
+\begin{tikzpicture}[
+    gen/.style={rectangle, draw=gray!60, rounded corners, align=center,
+                minimum width=3.0cm, minimum height=2.4cm, font=\small\bfseries},
+    seta/.style={-Stealth, very thick, draw=gray!55}
+]
+    \node[gen,fill=gray!15]   (g1) at (0,0)   {\textbf{1G}\\1980s\\\textbf{FDMA}\\Voz analogica\\1 antena};
+    \node[gen,fill=blue!10]   (g2) at (4,0)   {\textbf{2G}\\1990s\\\textbf{TDMA} (GSM)\\Voz digital\\SMS/GPRS};
+    \node[gen,fill=green!10]  (g3) at (8,0)   {\textbf{3G}\\2000s\\\textbf{CDMA}\\Internet movel\\Foto/Video};
+    \node[gen,fill=orange!10] (g4) at (12,0)  {\textbf{4G/LTE}\\2010s\\\textbf{OFDM+MIMO}\\Streaming\\IP fim-a-fim};
+    \node[gen,fill=red!8]     (g5) at (16,0)  {\textbf{5G}\\2020s\\\textbf{OFDMA+}\\Massive MIMO\\mmWave/IoE};
+
+    \draw[seta](g1)--node[above,font=\tiny\bfseries]{digitalizacao}(g2);
+    \draw[seta](g2)--node[above,font=\tiny\bfseries]{dados moveis}(g3);
+    \draw[seta](g3)--node[above,font=\tiny\bfseries]{IP fim-a-fim}(g4);
+    \draw[seta](g4)--node[above,font=\tiny\bfseries]{ultra-densa}(g5);
+\end{tikzpicture}
+}
+\par\smallskip{\small\textit{Linha do tempo das geracoes celulares com tecnica de acesso e servicos principais.}}
+\end{center}
+
+\begin{center}
+{\small\textit{Comparativo completo das geracoes celulares}}\\[4pt]
+\begin{tabular}{lllll}
+\toprule
+\textbf{Geracao} & \textbf{Acesso} & \textbf{Servicos} & \textbf{Caract.\ marcante} & \textbf{Antenas} \\
+\midrule
+\textbf{1G} & FDMA & Voz analogica & Analogico; AMPS/NMT & 1 \\
+\textbf{2G} & TDMA (GSM) & Voz digital, SMS & Digitalizacao da voz & $\sim$2 \\
+\textbf{3G} & CDMA (W-CDMA) & Foto, video, social & Espalhamento espectral & ate 4 \\
+\textbf{4G} & OFDM + MIMO & Streaming, pagamento & IP fim-a-fim; eNodeB & ate 16 \\
+\textbf{5G} & OFDMA + Massive MIMO & AR/VR, IoE, URLLC & mmWave; beamforming & $\sim$128 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Conceitos transversais:} FDMA (faixas de frequencia fixas) $\to$ TDMA (fatias de tempo) $\to$ CDMA (espalhamento espectral por codigos) $\to$ OFDMA (subportadoras ortogonais dinamicas). Padronizacao: \textbf{3GPP} (3G/LTE/5G), \textbf{IEEE} (802.11 Wi-Fi). Espectro \textbf{licenciado} (celular, QoS garantida) $\times$ \textbf{nao-licenciado} (Wi-Fi, sujeito a interferencia).
+\end{explicacao}
+
+\begin{resposta}
+``As redes celulares evoluiram de \textbf{1G} (FDMA, voz analogica) para \textbf{2G} (TDMA, voz digital + SMS), \textbf{3G} (CDMA, multimidia e Internet movel), \textbf{4G} (OFDM+MIMO, rede toda-IP com streaming) e \textbf{5G} (Massive MIMO, mmWave e beamforming, com AR/VR, IoT massivo e latencia ultrabaixa). A cada geracao mudou a \textbf{tecnica de acesso multiplo} (FDMA$\to$TDMA$\to$CDMA$\to$OFDMA), aumentou a \textbf{taxa de dados} e o numero de \textbf{antenas}, e os servicos evoluiram de \textbf{voz analogica} para \textbf{dados de banda larga e aplicacoes imersivas}.''
+\end{resposta}
+
+\hrulefill
+
+% ================================================================
+\section*{Questao 6 $\bigstar$ --- Algoritmos: Estado de Enlace e Vetor de Distancias}
+% ================================================================
+
+\begin{explicacao}
+
+\subsection*{6.1 Estado de Enlace (Link-State) --- Dijkstra $\cdot$ usado pelo OSPF}
+
+\textbf{Ideia:} cada no faz \textit{link-state broadcast} (inunda LSAs com o custo de seus enlaces). Com isso, \textbf{todos tem a topologia completa} e cada um roda Dijkstra localmente.
+
+\[
+D(v) = \min\bigl(\,D(v),\; D(w) + c_{w,v}\,\bigr)
+\]
+
+A cada iteracao, escolhe-se o no $w \notin N'$ com menor $D(w)$, adiciona-se a $N'$ e relaxam-se seus vizinhos.
+
+\begin{center}
+\begin{tikzpicture}[
+    no/.style={circle, draw=blue!85, fill=blue!10, thick, minimum size=8mm, font=\boldmath},
+    aresta/.style={draw=gray!80, thick},
+    peso/.style={font=\small, fill=white, inner sep=2pt}
+]
+    \node[no] (u) at (0,0)   {u};
+    \node[no] (v) at (2.5,2) {v};
+    \node[no] (x) at (2.5,-2){x};
+    \node[no] (w) at (5.5,2) {w};
+    \node[no] (y) at (5.5,-2){y};
+    \node[no] (z) at (8,0)   {z};
+
+    \draw[aresta] (u) -- node[peso]{2}(v);
+    \draw[aresta] (u) -- node[peso,pos=0.7]{5}(w);
+    \draw[aresta] (u) -- node[peso]{1}(x);
+    \draw[aresta] (v) -- node[peso]{2}(x);
+    \draw[aresta] (v) -- node[peso]{3}(w);
+    \draw[aresta] (x) -- node[peso,pos=0.3]{3}(w);
+    \draw[aresta] (x) -- node[peso]{1}(y);
+    \draw[aresta] (w) -- node[peso]{1}(y);
+    \draw[aresta] (w) -- node[peso]{5}(z);
+    \draw[aresta] (y) -- node[peso]{2}(z);
+\end{tikzpicture}
+\par\smallskip{\small\textit{Grafo canonico do exemplo de Dijkstra (origem = $u$).}}
+\end{center}
+
+\begin{center}
+{\small\textit{Tabela de iteracoes do Dijkstra a partir de $u$ (negrito = no adicionado no passo seguinte)}}\\[4pt]
+\begin{tabular}{cl ccccc}
+\toprule
+\textbf{Passo} & $N'$ & $D(v),p$ & $D(w),p$ & $D(x),p$ & $D(y),p$ & $D(z),p$ \\
+\midrule
+0 & $u$      & $2,u$          & $5,u$          & $\mathbf{1,u}$ & $\infty$       & $\infty$       \\
+1 & $ux$     & $2,u$          & $4,x$          & ---            & $\mathbf{2,x}$ & $\infty$       \\
+2 & $uxy$    & $\mathbf{2,u}$ & $3,y$          & ---            & ---            & $4,y$          \\
+3 & $uxyv$   & ---            & $\mathbf{3,y}$ & ---            & ---            & $4,y$          \\
+4 & $uxyvw$  & ---            & ---            & ---            & ---            & $\mathbf{4,y}$ \\
+5 & $uxyvwz$ & ---            & ---            & ---            & ---            & ---            \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Caminhos minimos a partir de $u$:}
+$u{\to}x$ (1),\; $u{\to}v$ (2),\; $u{\to}x{\to}y$ (2),\; $u{\to}x{\to}y{\to}w$ (3),\; $u{\to}x{\to}y{\to}z$ (4).
+
+\medskip
+\textbf{Complexidade:} $O(n^2)$ iteracoes; broadcast de LSAs $\Rightarrow O(n^2)$ mensagens. \textbf{Oscilacao possivel} quando o custo depende do volume de trafego.
+
+\subsection*{6.2 Vetor de Distancias (Distance-Vector) --- Bellman-Ford $\cdot$ usado pelo RIP}
+
+\textbf{Ideia:} ninguem conhece a topologia completa. Cada no conhece so os vizinhos e \textbf{troca seu vetor de distancias} periodicamente com eles. \textbf{Iterativo, assincrono e distribuido.}
+
+\[
+D_x(y) = \min_{v}\bigl\{\, c_{x,v} + D_v(y) \,\bigr\}
+\]
+
+\textbf{Exemplo} ($u$ quer alcancaar $z$, com $D_v(z)=5$, $D_x(z)=3$, $D_w(z)=3$):
+\[
+D_u(z) = \min\{2+5,\; 1+3,\; 5+3\} = \min\{7,\,\mathbf{4},\,8\} = 4 \quad(\text{via } x)
+\]
+
+\paragraph{Count-to-infinity (``mas noticias viajam devagar'')}
+
+\begin{center}
+\begin{tikzpicture}[
+    no/.style={circle, draw=green!60!black, fill=green!10, thick, minimum size=8mm, font=\boldmath},
+    aresta/.style={draw=gray!80, thick},
+    peso/.style={font=\small, fill=white, inner sep=2pt}
+]
+    \node[no] (x) at (0,1.5) {x};
+    \node[no] (y) at (3,1.5) {y};
+    \node[no] (z) at (1.5,0) {z};
+    \draw[aresta] (x) -- node[peso]{$4 \to 60$} (y);
+    \draw[aresta] (y) -- node[peso]{1} (z);
+    \draw[aresta] (x) -- node[peso]{50} (z);
+\end{tikzpicture}
+\par\smallskip{\small\textit{Count-to-infinity: o enlace $x$--$y$ encarece de 4 para 60.}}
+\end{center}
+
+Quando $c_{x,y}$ sobe de 4 para 60: $y$ ve que $z$ anuncia ``custo 5 ate $x$'' e calcula 6 (via $z$) --- mas $z$ usava $y$ nesse caminho. Eles se reanunciam mutuamente: 6, 7, 8, 9\ldots subindo lentamente ate $D_y(x)=60$. \textbf{Solucoes:} \textit{split horizon} e \textit{poisoned reverse}.
+
+\subsection*{6.3 Comparacao LS $\times$ DV}
+
+\begin{center}
+\begin{tabular}{lp{5cm}p{5.5cm}}
+\toprule
+\textbf{Criterio} & \textbf{Estado de Enlace (LS)} & \textbf{Vetor de Distancias (DV)} \\
+\midrule
+Visao        & Grafo \textbf{global} (via LSAs)       & So \textbf{vizinhos} \\
+Mensagens    & $O(n^2)$, broadcast a todos            & Troca local entre vizinhos \\
+Convergencia & Rapida; pode \textbf{oscilar}          & Variavel; \textbf{loops} e count-to-$\infty$ \\
+Robustez     & Erro fica local ao no                  & Erro \textbf{se propaga} (\textit{black-holing}) \\
+Protocolo    & \textbf{OSPF} (IP/89)                  & \textbf{RIP} (UDP/520) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{explicacao}
+
+\begin{resposta}
+``O \textbf{estado de enlace (OSPF)} da a cada roteador a \textbf{visao completa} da topologia via inundacao de LSAs e roda \textbf{Dijkstra} ($D(v)=\min(D(v),D(w)+c_{w,v})$) para os menores caminhos --- convergencia rapida, erros locais, $O(n^2)$ mensagens. O \textbf{vetor de distancias (RIP)} e \textbf{distribuido}: cada no conhece so os vizinhos, troca vetores de distancia e aplica \textbf{Bellman-Ford} ($D_x(y)=\min_v\{c_{x,v}+D_v(y)\}$) iterativamente --- mais simples, mas sujeito a \textbf{loops} e ao \textbf{count-to-infinity}, mitigado por \textit{split horizon} e \textit{poisoned reverse}.''
+\end{resposta}
+
+\hrulefill
+
+% ================================================================
+\section*{Questao 7 --- CSMA/CD \quad {\normalsize\textit{[Fora do escopo da P3 --- secao 6.3 excluida]}}}
+% ================================================================
+
+\begin{nota}
+A secao 6.3 (CSMA/CD) foi \textbf{excluida} do conteudo da Prova~3. Incluso abaixo apenas por completude --- nao invista tempo de estudo aqui.
+\end{nota}
+
+\textbf{CSMA/CD} (\textit{Carrier Sense Multiple Access with Collision Detection}): protocolo de acesso multiplo da Ethernet classica (half-duplex). O no \textbf{escuta o meio} (carrier sense) antes de transmitir; se livre, transmite; \textbf{detecta colisao} durante a transmissao; se colidir, \textbf{aborta}, envia \textit{jam signal} e aguarda tempo aleatorio por \textbf{backoff exponencial binario} antes de tentar novamente.
+
+\hrulefill
+
+% ================================================================
+\section*{Cola Final}
+% ================================================================
+
+\begin{colafinal}
+\begin{itemize}[noitemsep, leftmargin=1.5em]
+    \item \textbf{BGP} = TCP/179, \textit{path vector}, inter-AS. \quad \textbf{OSPF} = IP/89, estado de enlace, intra-AS. \quad \textbf{RIP} = UDP/520, vetor de distancias.
+    \item \textbf{SDN} = \textbf{4 caracteristicas} (nao esqueca a \textbf{separacao plano dados/controle}).
+    \item \textbf{ARP} so resolve no mesmo enlace; destino remoto $\to$ ARP pelo \textbf{gateway} + \textbf{cache ARP}.
+    \item \textbf{IP destino constante} fim-a-fim; \textbf{MAC muda a cada salto} (roteador descarta quadro e cria novo).
+    \item \textbf{Ordem do ``dia na vida'':} DHCP $\to$ ARP $\to$ DNS $\to$ TCP $\to$ HTTP.
+    \item \textbf{/27} = \texttt{255.255.255.224} = 30 hosts uteis; blocos de 32 enderecos.
+    \item \textbf{Switch} = self-learning (MAC de \textbf{origem}); flooding se destino desconhecido. \quad \textbf{Roteador} = longest prefix match + TTL.
+    \item \textbf{Moveis:} FDMA(1G) $\to$ TDMA(2G) $\to$ CDMA(3G) $\to$ OFDM+MIMO(4G) $\to$ Massive MIMO/mmWave(5G).
+    \item \textbf{Dijkstra} (LS): visao global, $O(n^2)$, pode oscilar. \quad \textbf{Bellman-Ford} (DV): distribuido, count-to-infinity $\to$ split horizon / poisoned reverse.
+    \item \textbf{NAT}: borda (IP priv $\to$ pub); \textbf{VLAN}: interior (isola broadcast por dominio logico). Complementares.
+    \item \textbf{ICMP} e \textbf{OSPF} $\to$ direto sobre IP. \quad \textbf{BGP} $\to$ TCP/179. \quad \textbf{RIP} $\to$ UDP/520.
+    \item \textbf{MPLS} = rotulos entre L2 e L3 (``camada 2.5''); encaminhamento rapido + engenharia de trafego.
+\end{itemize}
+\end{colafinal}
+
+\end{document}
