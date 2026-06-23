@@ -9,11 +9,13 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{tabularx}
+\usepackage{colortbl}
 \usepackage{tcolorbox}
 \usepackage{tikz}
 \usepackage{microtype}
 \usepackage{fancyhdr}
 \usepackage{hyperref}
+\usepackage{enumitem}
 
 \usetikzlibrary{positioning, arrows.meta, fit, backgrounds, calc}
 
@@ -73,6 +75,39 @@
     coltitle=white
 }
 
+\newtcolorbox{prova}{
+    colback=red!5!white,
+    colframe=red!55!black,
+    title=\textbf{\boldmath 🎯 Cai na Prova},
+    sharp corners=rounded,
+    boxrule=1.0pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+
+\definecolor{corquestao}{RGB}{180,70,0}
+\definecolor{corgabarito}{RGB}{0,100,75}
+
+\newtcolorbox{questao}[1]{
+    colback=orange!4!white,
+    colframe=corquestao,
+    title=\textbf{#1},
+    sharp corners=rounded,
+    boxrule=0.9pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+
+\newtcolorbox{gabaritocaixa}[1]{
+    colback=corgabarito!5!white,
+    colframe=corgabarito,
+    title=\textbf{#1},
+    sharp corners=rounded,
+    boxrule=0.9pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+
 \title{Capítulo 6: Camada de Enlace (exceto 6.3) e Redes de Datacenter}
 \author{}
 \date{}
@@ -81,8 +116,63 @@
 
 \maketitle
 \thispagestyle{fancy}
-
 \noindent\textit{Esse documento cobre o {Capítulo 6 (Camada de Enlace, exceto 6.3)}. Alinhei o conteúdo com seus slides da 9ª edição e com as questões da prova-base (especialmente Q2 e Q4) para garantir que cobrimos exatamente o escopo necessário para a Prova 3. Vamos do pré-requisito de endereçamento até as redes de datacenter.}
+
+\section*{Mapa do conteúdo}
+
+A pergunta-mãe do capítulo é: \textbf{``como os dados são transmitidos de forma confiável e eficiente dentro de uma mesma rede local e entre sub-redes distintas?''} O Cap.~5 (plano de controle) definiu a rota global dos pacotes. Agora, o foco é a entrega local de quadro a quadro (nó a nó) em redes físicas reais e o suporte a grandes infraestruturas, como datacenters.
+
+\begin{figure}[h!]
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[
+    node distance=0.8cm and 0.8cm,
+    block/.style={draw=gray!80, fill=gray!10, rounded corners, align=center, minimum height=1.1cm, minimum width=2.4cm, font=\small},
+    redblock/.style={block, fill=red!15, draw=red!40},
+    blueblock/.style={block, fill=blue!15, draw=blue!40},
+    arrow/.style={-Stealth, thick, draw=gray!70}
+]
+    % Nós principais (fluxo horizontal)
+    \node[block] (A) {6.1 Serviços\\de Enlace};
+    \node[block, right=of A] (B) {6.2 Detecção\\de Erros (CRC)};
+    \node[redblock, right=of B] (C) {6.4 Redes Locais\\MAC, ARP e Quadro};
+    
+    % Nós acima/abaixo à direita de C
+    \node[blueblock, above right=0.2cm and 0.8cm of C] (D) {Switches L2\\Auto-aprendizado};
+    \node[blueblock, below right=0.2cm and 0.8cm of C] (E) {VLANs\\e Trunking};
+    
+    % Nós à direita de D e E
+    \node[block, right=1.0cm of D] (F) {6.5 MPLS\\Comutação L2.5};
+    \node[block, right=1.0cm of E] (G) {6.6 Redes de\\Datacenter};
+    
+    % Nó de Revisão (posicionado acima de C)
+    \node[block, above=1.2cm of C] (Rev) {0. Revisão\\Sub-redes / NAT};
+    
+    % Conexões
+    \draw[arrow] (A) -- (B);
+    \draw[arrow] (B) -- (C);
+    \draw[arrow] (Rev) -- (C);
+    
+    % Ramificação de C para D e E
+    \draw[arrow] (C.east) -- ++(0.4,0) |- (D.west);
+    \draw[arrow] (C.east) -- ++(0.4,0) |- (E.west);
+    
+    % Conexões para MPLS e Datacenter
+    \draw[arrow] (D) -- (F);
+    \draw[arrow] (E) -- (G);
+    
+    % Conexão de Switches L2 para Datacenter (passando pelo meio de forma limpa)
+    \draw[arrow] (D.south) -- ++(0,-0.2) -| (G.160);
+    
+    % Conexão externa da Revisão para Datacenter (contornando por cima e pela direita com folga adequada)
+    \draw[arrow] (Rev.east) -- ++(7.4,0) |- (G.east) node[pos=0.45, above, font=\tiny\bfseries, text=gray!80] {NAT em nuvem};
+\end{tikzpicture}
+}
+\caption{Dependência lógica e fluxo de tópicos do Capítulo 6.}
+\label{fig:mapa_dia}
+\end{figure}
+
+A dependência lógica é essa: você precisa da base de \textbf{endereçamento MAC e ARP} (Seção 6.4) para entender como switches L2 operam através do auto-aprendizado e como VLANs segmentam esses domínios de broadcast locais. A \textbf{revisão de sub-redes e NAT} (Seção 0) serve de ponte essencial para o roteamento entre sub-redes (Seção 6.4) e para a arquitetura multi-tenant de \textbf{Redes de Datacenter} (Seção 6.6), que acopla VLANs e NAT para isolar clientes.
 
 \hrulefill
 
@@ -452,5 +542,316 @@ A Tabela~\ref{tab:relacao_prova_cap6} apresenta a amarração do conteúdo deste
 \bottomrule
 \end{tabularx}
 \end{table}
+
+
+\clearpage
+\hrulefill
+
+\section*{Seção de Questões Práticas --- Capítulo 6}
+
+\begin{nota}
+Esta seção contém \textbf{10 questões práticas} no estilo e grau de dificuldade da Prova~3: \textbf{4 fáceis} (Q1--Q4), \textbf{4 médias} (Q5--Q8) e \textbf{2 difíceis} (Q9--Q10). O \textbf{gabarito comentado} está ao final deste documento, após o separador visual. Resolva todas as questões \emph{antes} de consultar as respostas.
+\end{nota}
+
+% ======================================================
+\subsection*{Questões Fáceis (Q1--Q4)}
+% ======================================================
+
+\begin{questao}{✏️ Q1 --- Verdadeiro ou Falso: Camada de Enlace}
+Classifique como \textbf{V} ou \textbf{F} e \textbf{corrija as falsas} em uma linha:
+\begin{enumerate}[label=(\alph*)]
+    \item Quando um host deseja enviar um datagrama a um host em outra sub-rede, ele envia um ARP Request em broadcast para descobrir o endereço MAC do host de destino final.
+    \item Um switch Ethernet opera na Camada~2 e \textbf{divide} domínios de broadcast entre suas portas.
+    \item O endereço MAC possui estrutura plana (48 bits) e permanece o mesmo independentemente da rede à qual o dispositivo está conectado.
+    \item No quadro Ethernet, o campo Tipo (2 bytes) indica qual protocolo da camada de rede (ex.: IP ou ARP) deve receber o payload.
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q2 --- Conceitual: Por que a Internet não usa apenas MACs?}
+Explique por que o roteamento global da Internet \textbf{não pode} utilizar exclusivamente endereços MAC, sem necessidade de endereços IP. Sua resposta deve abordar:
+\begin{enumerate}[label=(\alph*)]
+    \item A estrutura plana do MAC versus a estrutura hierárquica do IP.
+    \item O impacto na escala das tabelas de roteamento global.
+    \item Como o endereço IP hierárquico viabiliza a \textbf{agregação de rotas} via CIDR.
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q3 --- CRC: Verificação de Quadro Recebido}
+O transmissor enviou o quadro concatenado $\langle D, R \rangle = 101110\mathbf{011}$ utilizando o polinômio gerador $G = 1001$ (o mesmo exemplo do texto).
+\begin{enumerate}[label=(\alph*)]
+    \item O receptor divide $101110011$ por $G = 1001$. Se o resto for zero, o que isso significa? Confirme que o resto é de fato zero realizando a divisão.
+    \item Suponha que durante a transmissão um bit é invertido e o receptor recebe $101100011$ (bit na posição 3 invertido). O receptor detecta o erro? Justifique.
+    \item Um algoritmo CRC de grau $r=3$ (como o $G=1001$ acima) garante a detecção de todos os erros em rajada (\textit{burst error}) de até quantos bits?
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q4 --- Switch: Auto-aprendizado e Encaminhamento}
+Um switch com 4 portas (1, 2, 3, 4) tem a tabela MAC \textbf{vazia}. Ele está conectado a: Host~A (porta~1, MAC:~AA), Host~B (porta~2, MAC:~BB), Host~C (porta~3, MAC:~CC), Host~D (porta~4, MAC:~DD). Para cada evento, indique: (i) o que o switch aprende; (ii) para qual(is) porta(s) o quadro é enviado; (iii) como a tabela fica após o evento.
+
+\begin{enumerate}[label=(\alph*)]
+    \item Host~A envia um quadro para Host~C.
+    \item Host~C responde para Host~A.
+    \item Host~B envia um quadro para Host~D (sem que D tenha transmitido antes).
+\end{enumerate}
+\end{questao}
+
+% ======================================================
+\subsection*{Questões de Dificuldade Média (Q5--Q8)}
+% ======================================================
+
+\begin{questao}{✏️ Q5 --- CRC: Cálculo Passo a Passo}
+Dados $D = 1101$ (4 bits) e $G = 1011$ ($r = 3$, portanto $G$ tem 4 bits):
+\begin{enumerate}[label=(\alph*)]
+    \item Calcule o valor de $R$ usando a divisão XOR módulo~2 (mostre cada passo da divisão de $D \cdot 2^3 = 1101000$ por $G$).
+    \item Escreva o quadro transmitido $\langle D, R \rangle$.
+    \item Verifique que $\langle D, R \rangle$ é divisível por $G$ (resto zero).
+    \item Se o receptor receber $1101001$ com o bit menos significativo invertido (recebe $1101000$), o CRC detectará o erro?
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q6 --- Roteamento entre Sub-redes: Cabeçalhos em cada Salto}
+Considere a topologia: Host~A (IP: \texttt{172.16.0.10}, MAC: \texttt{AA:AA}) na sub-rede \texttt{172.16.0.0/24}, conectado ao Roteador~R via interface \texttt{R-eth0} (IP: \texttt{172.16.0.1}, MAC: \texttt{R1:R1}). O roteador R tem outra interface \texttt{R-eth1} (IP: \texttt{172.17.0.1}, MAC: \texttt{R2:R2}) na sub-rede \texttt{172.17.0.0/24}, onde está Host~B (IP: \texttt{172.17.0.20}, MAC: \texttt{BB:BB}).
+
+\begin{enumerate}[label=(\alph*)]
+    \item Preencha a tabela de cabeçalhos para cada salto quando A envia um datagrama para B:
+\begin{center}
+\begin{tabular}{lllll}
+\toprule
+\textbf{Estágio} & \textbf{IP Origem} & \textbf{IP Destino} & \textbf{MAC Origem} & \textbf{MAC Destino} \\
+\midrule
+Salto 1 (A $\to$ R) & ? & ? & ? & ? \\
+Salto 2 (R $\to$ B) & ? & ? & ? & ? \\
+\bottomrule
+\end{tabular}
+\end{center}
+    \item Por que os endereços MAC mudam a cada salto mas os endereços IP permanecem constantes?
+    \item Antes do Salto~1, Host~A precisa do MAC de \texttt{172.16.0.1}. Descreva os 2 passos do ARP necessários.
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q7 --- Sub-redes /27: Dimensionamento e Derivação}
+Uma organização recebe o bloco \texttt{192.168.10.0/24} e precisa criar sub-redes com no máximo \textbf{30 hosts utilizáveis} cada.
+\begin{enumerate}[label=(\alph*)]
+    \item Quantos bits de host são necessários? Qual o prefixo resultante?
+    \item Qual é a máscara de sub-rede em notação decimal pontuada?
+    \item Liste o \textbf{endereço de rede}, a \textbf{faixa utilizável} e o \textbf{endereço de broadcast} das 4 primeiras sub-redes.
+    \item O host \texttt{192.168.10.100} e o host \texttt{192.168.10.130} estão na mesma sub-rede? Justifique com cálculo.
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q8 --- VLANs e NAT em Ambiente de Datacenter}
+Um provedor de nuvem hospeda dois clientes (Cliente~A e Cliente~B) no mesmo datacenter físico, cada um com dezenas de servidores no mesmo switch físico.
+\begin{enumerate}[label=(\alph*)]
+    \item Como as VLANs garantem isolamento de tráfego \textbf{L2} entre os clientes, mesmo compartilhando o hardware físico?
+    \item Como o NAT atua na borda do datacenter para garantir \textbf{segurança e ocultação de topologia} para acessos externos?
+    \item Explique como a combinação de VLANs e NAT otimiza a \textbf{alocação de endereços IP públicos} no contexto multi-tenant.
+    \item Por que um switch L2 \textbf{sozinho} não seria suficiente para garantir o isolamento entre os clientes sem VLANs?
+\end{enumerate}
+\end{questao}
+
+% ======================================================
+\subsection*{Questões Difíceis (Q9--Q10)}
+% ======================================================
+
+\begin{questao}{✏️ Q9 --- Cenário Completo: Sub-redes, ARP e Roteamento}
+A empresa XYZ possui o bloco \texttt{200.10.50.0/24} e divide-o em \textbf{4 sub-redes} com 30 hosts cada. Um único Roteador~R central interliga todas as sub-redes, com uma interface em cada uma. O Host~H1 (primeiro host utilizável da sub-rede~1) quer enviar um datagrama para o Host~H4 (último host utilizável da sub-rede~4).
+\begin{enumerate}[label=(\alph*)]
+    \item Defina as 4 sub-redes: endereço de rede, faixa utilizável e broadcast.
+    \item Qual é o endereço IP de H1 e de H4?
+    \item Descreva os \textbf{5 passos do protocolo ARP} executados por H1 antes de poder enviar o primeiro quadro em direção a H4 (considere tabelas ARP inicialmente vazias).
+    \item Preencha a tabela de cabeçalhos MAC/IP para os dois saltos da transmissão (H1$\to$R e R$\to$H4), assumindo que o roteador R usa o \textbf{último} endereço IP utilizável de cada sub-rede para suas interfaces.
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q10 --- MPLS vs.\ IP Puro: Engenharia de Tráfego}
+Uma operadora de telecomunicações possui o backbone: nós A, B, C, D, E com enlaces A--B (10\,Gbps), A--C (1\,Gbps), B--D (10\,Gbps), C--D (1\,Gbps), D--E (10\,Gbps). O roteamento IP convencional envia todo tráfego A$\to$E pelo caminho A--B--D--E (maior banda).
+\begin{enumerate}[label=(\alph*)]
+    \item Um evento gera pico simultâneo: 8\,Gbps de streaming e 1\,Gbps de VoIP urgente, ambos de A para E. Como o MPLS permite tratar esses fluxos de forma diferente, mesmo ambos tendo o mesmo destino?
+    \item Explique o papel dos \textbf{LSRs} e como a troca de \textbf{rótulos} (labels) evita a inspeção do cabeçalho IP a cada salto.
+    \item Se o enlace B--D falhar, como o MPLS implementa \textbf{fast reroute} e por que o IP puro não consegue o mesmo sem intervenção manual ou convergência do protocolo de roteamento?
+    \item Qual é a posição do cabeçalho MPLS no quadro transmitido? Por que ele é chamado de protocolo de ``camada 2.5''?
+\end{enumerate}
+\end{questao}
+
+% ================================================================
+\clearpage
+
+\begin{center}
+\rule{\textwidth}{2.5pt}\\[8pt]
+{\LARGE\bfseries GABARITO COMENTADO}\\[4pt]
+{\large Capítulo 6 --- Camada de Enlace}\\[6pt]
+{\small\itshape Consulte apenas após tentar resolver todas as questões acima.}\\[8pt]
+\rule{\textwidth}{2.5pt}
+\end{center}
+\vspace{1em}
+
+% ---- Q1 ----
+\begin{gabaritocaixa}{✅ Gabarito Q1 --- Verdadeiro ou Falso}
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{F.} O ARP é \emph{local à sub-rede}. Para enviar a um destino externo, H1 envia o ARP Request para descobrir o MAC do seu \textbf{gateway padrão} (interface do roteador na mesma sub-rede). O ARP nunca cruza roteadores.
+    \item \textbf{F.} O switch opera na Camada~2, mas \textbf{não divide} domínios de broadcast --- broadcasts são inundados para todas as portas ativas. Quem divide domínios de broadcast é o \textbf{roteador} (ou VLANs configuradas).
+    \item \textbf{V.} O MAC possui estrutura plana (endereço único por adaptador, gravado em ROM pelo fabricante) e não depende da rede à qual o dispositivo está conectado. Por isso é ``portável''.
+    \item \textbf{V.} O campo Tipo (Ethertype) indica o protocolo da camada de rede: \texttt{0x0800} = IPv4, \texttt{0x0806} = ARP, \texttt{0x86DD} = IPv6.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q2 ----
+\begin{gabaritocaixa}{✅ Gabarito Q2 --- Por que a Internet não usa apenas MACs?}
+\begin{enumerate}[label=(\alph*)]
+    \item O endereço MAC tem estrutura \textbf{plana} (48 bits sem hierarquia topológica): o fabricante atribui o MAC sem qualquer relação com a localização física do dispositivo na rede. O endereço IP é \textbf{hierárquico} (rede + host), refletindo a posição topológica na rede.
+    \item Com MACs planos, cada roteador no núcleo da Internet precisaria manter uma entrada \textbf{individual} para cada placa de rede existente no mundo (bilhões de entradas). Isso inviabilizaria completamente o encaminhamento por memória e velocidade de consulta.
+    \item O IP hierárquico permite \textbf{agregação de rotas via CIDR}: um roteador anota apenas o prefixo de bloco (ex.: \texttt{200.10.0.0/16}) e alcança milhares de hosts com uma única entrada na tabela. As tabelas de roteamento global operam com centenas de milhares de prefixos (não bilhões de MACs).
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q3 ----
+\begin{gabaritocaixa}{✅ Gabarito Q3 --- CRC: Verificação de Quadro}
+\begin{enumerate}[label=(\alph*)]
+    \item Resto zero significa que \textbf{nenhum erro foi detectado}: o quadro recebido é divisível por $G$. Isso é garantido pela construção de $R$ --- o transmissor envia exatamente $\langle D, R \rangle$ de forma que a concatenação seja divisível por $G$. Verificação: conforme o exemplo do texto, $101110011 \div 1001$ produz resto 0 (os passos são o espelho da construção de $R=011$, que zera o resto por definição).
+    \item Sim, \textbf{o erro é detectado}. O receptor divide $101100011$ por $1001$ e obtém um resto $\neq 0$, indicando corrupção. O CRC de grau $r=3$ detecta todos os erros em até $r$ bits alterados de forma consecutiva (burst).
+    \item Um CRC de grau $r$ garante a detecção de todos os erros em rajada de tamanho $\leq r$ bits. Portanto, com $r = 3$, \textbf{todos os burst errors de até 3 bits} são garantidamente detectados.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q4 ----
+\begin{gabaritocaixa}{✅ Gabarito Q4 --- Switch: Auto-aprendizado}
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Aprende}: MAC AA está na porta~1. \textbf{MAC destino CC não está na tabela} $\to$ \textbf{flooding} para portas 2, 3, 4. Tabela: \{AA$\to$1\}.
+    \item \textbf{Aprende}: MAC CC está na porta~3. \textbf{MAC destino AA está na tabela} (porta~1) $\to$ \textbf{encaminha} apenas pela porta~1. Tabela: \{AA$\to$1, CC$\to$3\}.
+    \item \textbf{Aprende}: MAC BB está na porta~2. \textbf{MAC destino DD não está na tabela} $\to$ \textbf{flooding} para portas 1, 3, 4. Tabela: \{AA$\to$1, CC$\to$3, BB$\to$2\}.
+
+    \textit{Regra geral: o switch aprende sempre pelo MAC de \textbf{origem}; decide o encaminhamento pelo MAC de \textbf{destino}. Flooding ocorre quando o destino é desconhecido ou broadcast.}
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q5 ----
+\begin{gabaritocaixa}{✅ Gabarito Q5 --- CRC: Cálculo Passo a Passo}
+\begin{enumerate}[label=(\alph*)]
+    \item $D \cdot 2^3 = 1101\,000$. Divisão de $1101000$ por $1011$ (XOR módulo~2):
+\begin{verbatim}
+    1101000  | 1011
+  ^ 1011     | ---------
+    ----      | 1011 (quociente, descartado)
+    0110 0
+    ^ 0000
+      ----
+      1100
+    ^ 1011
+      ----
+      0111 0  (traz o ultimo bit: 0)
+      ^ 0000
+        ----
+        1110
+      ^ 1011
+        ----
+        0101  -> Nao ha mais bits. Resto R = 001 (3 bits)
+\end{verbatim}
+    Portanto $\mathbf{R = 001}$.
+    \item Quadro transmitido: $\langle D, R \rangle = 1101\mathbf{001}$.
+    \item Verificação: $1101001 \div 1011$. Seguindo os mesmos passos, o último XOR produz $1011 \oplus 1011 = \mathbf{0000}$, confirmando resto zero. ✓
+    \item Se o receptor receber $1101000$ (LSB invertido de $1101001$), ele divide por $1011$ e obtém resto $\mathbf{\neq 0}$, portanto o \textbf{erro é detectado}. O CRC de grau $r=3$ detecta qualquer alteração de até 3 bits consecutivos.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q6 ----
+\begin{gabaritocaixa}{✅ Gabarito Q6 --- Roteamento entre Sub-redes: Cabeçalhos}
+\begin{enumerate}[label=(\alph*)]
+    \item Tabela de cabeçalhos:
+\begin{center}
+\begin{tabularx}{\textwidth}{lXXXX}
+\toprule
+\textbf{Estágio} & \textbf{IP Origem} & \textbf{IP Destino} & \textbf{MAC Origem} & \textbf{MAC Destino} \\
+\midrule
+Salto~1 (A $\to$ R) & \texttt{172.16.0.10} & \texttt{172.17.0.20} & \texttt{AA:AA} & \texttt{R1:R1} \\
+Salto~2 (R $\to$ B) & \texttt{172.16.0.10} & \texttt{172.17.0.20} & \texttt{R2:R2} & \texttt{BB:BB} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+    \item Os \textbf{IPs} são endereços fim-a-fim (pertencem à camada de rede) --- identificam origem e destino finais e não mudam durante o trajeto. Os \textbf{MACs} são endereços de enlace, válidos \emph{apenas em um único segmento físico}. A cada salto o roteador descarta o quadro Ethernet recebido e cria um novo quadro com novos MACs de origem e destino para o próximo segmento.
+    \item Dois passos ARP: (1) Host~A envia \textbf{ARP Request} em broadcast (\texttt{FF:FF:FF:FF:FF:FF}): ``Quem tem o IP \texttt{172.16.0.1}?'' (2) Roteador~R responde com \textbf{ARP Reply} unicast para A: ``Eu tenho \texttt{172.16.0.1}, meu MAC é \texttt{R1:R1}''. Host~A registra o mapeamento em sua tabela ARP local.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q7 ----
+\begin{gabaritocaixa}{✅ Gabarito Q7 --- Sub-redes /27}
+\begin{enumerate}[label=(\alph*)]
+    \item Para $\geq 30$ hosts: $2^n - 2 \geq 30 \Rightarrow n = 5$ bits de host. Prefixo: $/27$ ($32-5$).
+    \item Máscara: $\underbrace{11111111.11111111.11111111.}_{24\text{ bits}}\underbrace{11100000}_{= 224}$ $\to$ \textbf{\texttt{255.255.255.224}}. Bloco (salto): $256 - 224 = 32$.
+    \item As 4 primeiras sub-redes:
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{Sub-rede} & \textbf{Endereço de Rede} & \textbf{Faixa Utilizável} & \textbf{Broadcast} \\
+\midrule
+1 & \texttt{192.168.10.0/27} & \texttt{.1} -- \texttt{.30} & \texttt{192.168.10.31} \\
+2 & \texttt{192.168.10.32/27} & \texttt{.33} -- \texttt{.62} & \texttt{192.168.10.63} \\
+3 & \texttt{192.168.10.64/27} & \texttt{.65} -- \texttt{.94} & \texttt{192.168.10.95} \\
+4 & \texttt{192.168.10.96/27} & \texttt{.97} -- \texttt{.126} & \texttt{192.168.10.127} \\
+\bottomrule
+\end{tabular}
+\end{center}
+    \item \texttt{192.168.10.100}: pertence ao bloco que começa em 96 ($96 \leq 100 \leq 127$) $\to$ \textbf{Sub-rede~4}. \texttt{192.168.10.130}: pertence ao bloco que começa em 128 ($128 \leq 130 \leq 159$) $\to$ \textbf{Sub-rede~5}. \textbf{Não} estão na mesma sub-rede.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q8 ----
+\begin{gabaritocaixa}{✅ Gabarito Q8 --- VLANs e NAT em Datacenter}
+\begin{enumerate}[label=(\alph*)]
+    \item VLANs segmentam o switch físico em \textbf{múltiplos domínios de broadcast lógicos}: a VLAN~10 (Cliente~A) e a VLAN~20 (Cliente~B) são completamente isoladas em L2. Um broadcast ARP de um servidor do Cliente~A jamais alcança os servidores do Cliente~B, mesmo no mesmo hardware.
+    \item O NAT atua na borda do datacenter traduzindo \texttt{(IP privado, porta)} para \texttt{(IP público, porta)}. Agentes externos enxergam apenas o IP público do gateway; a topologia interna (IPs privados, organização de servidores) fica completamente oculta. Conexões não solicitadas de fora são bloqueadas por padrão.
+    \item Cada cliente usa um espaço de endereçamento IP \textbf{privado} internamente (ex.: \texttt{10.0.0.0/8}), e o NAT mapeia para poucos IPs públicos compartilhados. Centenas de clientes com dezenas de servidores cada podem coexistir usando apenas um handful de endereços IPv4 públicos.
+    \item Sem VLANs, o switch encaminha broadcasts de todos os hosts para todas as portas. Um host do Cliente~A poderia receber broadcasts do Cliente~B (ex.: ARP Requests), expondo informações de topologia e criando riscos de segurança e desempenho (\textit{broadcast storm}).
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q9 ----
+\begin{gabaritocaixa}{✅ Gabarito Q9 --- Cenário Completo: Sub-redes, ARP e Roteamento}
+\begin{enumerate}[label=(\alph*)]
+    \item Prefixo /27, bloco 32. As 4 sub-redes de \texttt{200.10.50.0/24}:
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{Sub-rede} & \textbf{Endereço de Rede} & \textbf{Faixa Utilizável} & \textbf{Broadcast} \\
+\midrule
+1 & \texttt{200.10.50.0/27} & \texttt{.1} -- \texttt{.30} & \texttt{200.10.50.31} \\
+2 & \texttt{200.10.50.32/27} & \texttt{.33} -- \texttt{.62} & \texttt{200.10.50.63} \\
+3 & \texttt{200.10.50.64/27} & \texttt{.65} -- \texttt{.94} & \texttt{200.10.50.95} \\
+4 & \texttt{200.10.50.96/27} & \texttt{.97} -- \texttt{.126} & \texttt{200.10.50.127} \\
+\bottomrule
+\end{tabular}
+\end{center}
+    \item H1 = \texttt{200.10.50.1} (1º host da sub-rede~1). H4 = \texttt{200.10.50.126} (último host da sub-rede~4). Interface do Roteador~R na sub-rede~1: \texttt{200.10.50.30} (MAC:~R1). Interface de~R na sub-rede~4: \texttt{200.10.50.125} (MAC:~R4).
+    \item Os 5 passos ARP:
+    \begin{enumerate}[label=\arabic*.]
+        \item H1 verifica: \texttt{200.10.50.126} está fora da sub-rede~1 $\Rightarrow$ precisa do gateway.
+        \item H1 envia \textbf{ARP Request} em broadcast: ``Quem tem \texttt{200.10.50.30}?'' (MAC destino = FF:FF:FF:FF:FF:FF).
+        \item Roteador~R responde com \textbf{ARP Reply} unicast: ``\texttt{200.10.50.30} é o MAC~R1'' (para H1).
+        \item H1 registra na tabela ARP: \texttt{200.10.50.30} $\to$ R1.
+        \item H1 encapsula o datagrama no quadro Ethernet com MAC destino = R1 e envia.
+    \end{enumerate}
+    \item O roteador R também precisará resolver o MAC de H4 via ARP (2 passos adicionais omitidos). Tabela de cabeçalhos:
+\begin{center}
+\begin{tabularx}{\textwidth}{lXXXX}
+\toprule
+\textbf{Estágio} & \textbf{IP Origem} & \textbf{IP Destino} & \textbf{MAC Origem} & \textbf{MAC Destino} \\
+\midrule
+H1 $\to$ R & \texttt{200.10.50.1} & \texttt{200.10.50.126} & H1\_MAC & R1 \\
+R $\to$ H4 & \texttt{200.10.50.1} & \texttt{200.10.50.126} & R4 & H4\_MAC \\
+\bottomrule
+\end{tabularx}
+\end{center}
+\textit{Os IPs de origem e destino \textbf{não mudam}. Os MACs mudam a cada salto --- R usa MAC R1 para receber e MAC R4 para enviar no próximo segmento.}
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q10 ----
+\begin{gabaritocaixa}{✅ Gabarito Q10 --- MPLS vs.\ IP Puro}
+\begin{enumerate}[label=(\alph*)]
+    \item O MPLS permite rotear fluxos com o mesmo IP de destino por \textbf{caminhos físicos distintos}: o VoIP urgente recebe um rótulo com LSP (\textit{Label Switched Path}) reservando A--B--D--E (baixa latência, alto throughput). O streaming de 8\,Gbps recebe um rótulo diferente, sendo desviado para A--C--D--E (menor prioridade, evita congestionamento no enlace B--D). O roteamento IP puro enviaria \textbf{tudo} pelo mesmo caminho (menor custo por Dijkstra), sem distinção de fluxo.
+    \item \textbf{LSR (Label Switching Router)}: ao receber um pacote MPLS, o LSR consulta \textbf{apenas o rótulo} (20 bits) em sua tabela MPLS local, substitui-o pelo rótulo de saída e encaminha para a interface correta --- sem inspecionar o cabeçalho IP de destino. Isso é muito mais rápido (busca exata por rótulo vs.\ busca pelo prefixo mais longo em tabelas IP).
+    \item No MPLS, \textbf{fast reroute} pré-calcula caminhos de backup. Se B--D falha, o LSR detecta a falha (em milissegundos via sinalização) e comuta o rótulo do tráfego afetado para o LSP de contingência A--C--D--E, \textbf{sem aguardar reconvergência do protocolo de roteamento}. No IP puro, a falha precisa ser propagada via OSPF/BGP, os roteadores recalculam Dijkstra e instalam novas rotas --- processo que leva dezenas de segundos (inaceitável para VoIP ou vídeo ao vivo).
+    \item O cabeçalho MPLS (32 bits, dos quais 20 são o rótulo) é inserido \textbf{entre o cabeçalho Ethernet (L2) e o cabeçalho IP (L3)}. Por não se encaixar em nenhuma das camadas clássicas do modelo OSI, é chamado de protocolo de \textbf{``camada 2.5''}: opera acima do enlace mas abaixo da rede.
+\end{enumerate}
+\end{gabaritocaixa}
 
 \end{document}

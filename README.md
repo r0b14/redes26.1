@@ -24,7 +24,7 @@ No futuro, ao abrir uma conversa com o **Claude**, **Gemini** ou qualquer outro 
 
 > *"Transcreva o arquivo `resumocapX.md` para LaTeX seguindo o template e as diretrizes presentes na pasta `.ai_instructions/` do projeto."*
 
-Como as diretrizes e regras estão descritas diretamente na pasta `.ai_instructions/`, os agentes de IA serão capazes de ler os arquivos de contexto e formatar o resultado final em perfeita conformidade com o padrão visual estabelecido (incluindo as caixas de destaque `tcolorbox`, margens e numeração de páginas).
+Como as diretrizes e regras estão descritas diretamente na pasta `.ai_instructions/`, os agentes de IA serão capazes de ler os arquivos de contexto e formatar o resultado final em perfeita conformidade com o padrão visual estabelecido (incluindo as caixas de destaque `tcolorbox`, margens, numeração de páginas e a geração obrigatória do **Mapa do conteúdo** com o fluxo de dependência lógica estruturado no diagrama TikZ).
 
 ### 🛠️ Utilizando o Script de Pré-conversão (Python)
 

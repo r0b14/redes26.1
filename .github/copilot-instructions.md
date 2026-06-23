@@ -16,3 +16,8 @@ Este repositório possui um fluxo de trabalho específico para a transcrição e
 5. **TikZ:** 
    - Sempre envolva diagramas TikZ com `\resizebox{0.95\textwidth}{!}{...}` para evitar estouro de margens.
    - Se houver textos de descrição longos em enlaces do TikZ (como endereços MAC), utilize quebras de linha `\\` com `align=center` para evitar sobreposição nos nós.
+   - **Planejamento Geométrico e Roteamento de Setas:** Distribua os blocos em fluxo lógico nítido (horizontal ou vertical). Setas de longa distância nunca devem passar por dentro ou por cima de outros blocos; crie rotas de contorno por fora do diagrama (usando desvios com coordenadas de deslocamento adequadas).
+6. **Mapa do Conteúdo e Fluxo Lógico (Obrigatório):** Sempre insira uma seção `\section*{Mapa do conteúdo}` logo após o cabeçalho/resumo inicial no arquivo `.tex`. Ela deve conter:
+   - Uma pergunta-mãe resumindo o tema central do capítulo.
+   - Um diagrama TikZ estruturado que ilustre o fluxo de estudo/dependências entre os tópicos (usando os estilos `block`, `redblock`, `blueblock` e setas `-Stealth`).
+   - Um parágrafo explicativo da dependência entre os conceitos e um divisor `\hrulefill` no final.

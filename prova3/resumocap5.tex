@@ -5,31 +5,40 @@
 \usepackage{lmodern}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{geometry}
-\geometry{a4paper, top=1cm, bottom=1cm, left=1.5cm, right=1.5cm}
+\geometry{a4paper, top=1cm, bottom=1.3cm, left=1.5cm, right=1.5cm}
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{tabularx}
+\usepackage{colortbl}
 \usepackage{tcolorbox}
 \usepackage{tikz}
 \usepackage{microtype}
+\usepackage{fancyhdr}
 \usepackage{hyperref}
+\usepackage{enumitem}
 
 \usetikzlibrary{positioning, arrows.meta, fit, backgrounds, calc}
 
 \hypersetup{
     colorlinks=true,
     linkcolor=blue,
-    filecolor=magenta,      
+    filecolor=magenta,
     urlcolor=cyan,
     pdftitle={Resumo Capítulo 5 - Plano de Controle},
     pdfpagemode=FullScreen,
 }
 
+% Configuração de cabeçalho e rodapé com número da página no canto direito
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[R]{\thepage}
+
 % Definições do tcolorbox para destaques
 \newtcolorbox{reflexao}{
     colback=yellow!5!white,
     colframe=yellow!60!black,
-    title=\textbf{\boldmath �� Reflexão Crítica},
+    title=\textbf{\boldmath 🧠 Reflexão Crítica},
     sharp corners=rounded,
     boxrule=0.8pt,
     fonttitle=\bfseries,
@@ -39,7 +48,7 @@
 \newtcolorbox{nota}{
     colback=blue!5!white,
     colframe=blue!60!black,
-    title=\textbf{\boldmath �� Nota / Atenção},
+    title=\textbf{\boldmath 📌 Nota / Atenção},
     sharp corners=rounded,
     boxrule=0.8pt,
     fonttitle=\bfseries,
@@ -49,7 +58,7 @@
 \newtcolorbox{pratico}{
     colback=green!5!white,
     colframe=green!60!black,
-    title=\textbf{\boldmath ��️ Aplicação Prática},
+    title=\textbf{\boldmath 🛠️ Aplicação Prática},
     sharp corners=rounded,
     boxrule=0.8pt,
     fonttitle=\bfseries,
@@ -59,22 +68,58 @@
 \newtcolorbox{analogia}{
     colback=purple!5!white,
     colframe=purple!60!black,
-    title=\textbf{\boldmath �� Analogia},
+    title=\textbf{\boldmath 💡 Analogia},
     sharp corners=rounded,
     boxrule=0.8pt,
     fonttitle=\bfseries,
     coltitle=white
 }
 
+\newtcolorbox{prova}{
+    colback=red!5!white,
+    colframe=red!55!black,
+    title=\textbf{\boldmath 🎯 Cai na Prova},
+    sharp corners=rounded,
+    boxrule=1.0pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+
+\definecolor{corquestao}{RGB}{180,70,0}
+\definecolor{corgabarito}{RGB}{0,100,75}
+
+\newtcolorbox{questao}[1]{
+    colback=orange!4!white,
+    colframe=corquestao,
+    title=\textbf{#1},
+    sharp corners=rounded,
+    boxrule=0.9pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+
+\newtcolorbox{gabaritocaixa}[1]{
+    colback=corgabarito!5!white,
+    colframe=corgabarito,
+    title=\textbf{#1},
+    sharp corners=rounded,
+    boxrule=0.9pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+
 \title{Capítulo 5: Camada de Rede, Plano de Controle}
+\author{}
+\date{}
 
 \begin{document}
 
 \maketitle
+\thispagestyle{fancy}
 
 \noindent\textit{Esse documento cobre o {Capítulo 5 (Plano de Controle)}. Antes de escrever, vou conferir o conteúdo real dos seus slides da 9ª edição para o resumo bater certinho com o que cai na sua Prova 3. Bom material. Vou conferir vetor de distâncias, OSPF, BGP e SDN para garantir alinhamento. Excelente --- tenho o vetor de distâncias completo, com o exemplo de count-to-infinity. Última verificação: OSPF, BGP, SDN e ICMP. Conferido com seus slides da 9ª edição (e com os materiais de Packet Tracer). Está tudo alinhado.}
 
-\section*{Mapa do dia}
+\section*{Mapa do conteúdo}
 
 A pergunta-mãe do capítulo é: \textbf{``quem decide os caminhos que os pacotes percorrem na rede?''} O Cap.~4 (plano de dados) respondeu \textit{como} um pacote é jogado da porta de entrada para a de saída. Agora o foco é \textit{como a tabela de encaminhamento é calculada}.
 
@@ -677,7 +722,7 @@ Protocolo de \textbf{mensagens de controle e erro} entre hosts/roteadores. Carre
 
 \hrulefill
 
-\section*{�� Amarração com a prova-base}
+\section*{🎯 Amarração com a prova-base}
 
 \begin{table}[h!]
 \centering
@@ -694,5 +739,292 @@ Protocolo de \textbf{mensagens de controle e erro} entre hosts/roteadores. Carre
 \bottomrule
 \end{tabularx}
 \end{table}
+
+
+\clearpage
+\hrulefill
+
+\section*{Seção de Questões Práticas --- Capítulo 5}
+
+\begin{nota}
+Esta seção contém \textbf{10 questões práticas} no estilo e grau de dificuldade da Prova~3: \textbf{4 fáceis} (Q1--Q4), \textbf{4 médias} (Q5--Q8) e \textbf{2 difíceis} (Q9--Q10). O \textbf{gabarito comentado} está ao final deste documento, após o separador visual. Resolva todas as questões \emph{antes} de consultar as respostas.
+\end{nota}
+
+% ======================================================
+\subsection*{Questões Fáceis (Q1--Q4)}
+% ======================================================
+
+\begin{questao}{✏️ Q1 --- Verdadeiro ou Falso: Plano de Controle}
+Classifique cada afirmação como \textbf{V} (verdadeiro) ou \textbf{F} (falso) e \textbf{corrija as falsas} em uma linha:
+\begin{enumerate}[label=(\alph*)]
+    \item O protocolo OSPF é baseado no algoritmo de vetor de distâncias e distribui periodicamente seus vetores para os vizinhos imediatos.
+    \item No paradigma SDN, os switches da rede não executam nenhum algoritmo de roteamento; toda a inteligência de controle reside no controlador.
+    \item O BGP utiliza o mecanismo de vetor de caminhos (\textit{path vector}), que inclui a sequência completa de ASes no anúncio de cada prefixo, evitando loops.
+    \item O protocolo ICMP é encapsulado diretamente em quadros Ethernet, sem usar datagramas IP como intermediário.
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q2 --- Associação: Mensagens ICMP}
+Associe cada situação ao par Tipo/Código ICMP correto:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Situação} & \textbf{(Tipo, Código)} \\
+\midrule
+(1) Origem dispara um \texttt{ping} para o destino & (~~~~) \\
+(2) TTL do datagrama chegou a zero em um roteador intermediário & (~~~~) \\
+(3) Destino não possui aplicação ouvindo na porta UDP solicitada & (~~~~) \\
+(4) O host de destino está inalcançável & (~~~~) \\
+\bottomrule
+\end{tabular}
+\end{center}
+\textbf{Opções:} \quad (A) Type~3, Code~3 \quad (B) Type~8, Code~0 \quad (C) Type~11, Code~0 \quad (D) Type~3, Code~1
+\end{questao}
+
+\begin{questao}{✏️ Q3 --- Conceitual: Roteamento $\times$ Encaminhamento}
+Explique a diferença entre \textbf{roteamento (routing)} e \textbf{encaminhamento (forwarding)}, abordando:
+\begin{enumerate}[label=(\alph*)]
+    \item A qual plano pertence cada operação e por quê.
+    \item A escala de atuação (local vs.\ global) de cada um.
+    \item O tipo de hardware/software envolvido na implementação real --- cite exemplos de protocolo ou componente físico.
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q4 --- Dijkstra: Análise de Iteração (Grafo do Texto)}
+Usando o grafo do texto com origem em \textbf{$u$} ($u$--$v$:2, $u$--$x$:1, $u$--$w$:5, $v$--$x$:2, $v$--$w$:3, $x$--$w$:3, $x$--$y$:1, $w$--$y$:1, $w$--$z$:5, $y$--$z$:2):
+\begin{enumerate}[label=(\alph*)]
+    \item Qual nó é adicionado ao conjunto $N'$ no Step~1? Por quê?
+    \item Após o Step~2, qual é o valor de $D(w)$ e quem é o predecessor $p(w)$?
+    \item Qual é o enlace de saída em $u$ para alcançar $z$? Qual o custo total e o caminho completo?
+\end{enumerate}
+\end{questao}
+
+% ======================================================
+\subsection*{Questões de Dificuldade Média (Q5--Q8)}
+% ======================================================
+
+\begin{questao}{✏️ Q5 --- Count-to-Infinity: Análise Completa}
+Considere a rede com 3 nós $x$, $y$, $z$ e custos iniciais em estado estável:
+\[
+c_{x,y} = 4, \quad c_{y,z} = 1, \quad c_{x,z} = 50
+\]
+\begin{enumerate}[label=(\alph*)]
+    \item Escreva os vetores de distância estáveis: $D_y(x)$ e $D_z(x)$.
+    \item O custo $c_{x,y}$ muda de 4 para \textbf{60}. Descreva as 3 primeiras trocas de vetores entre $y$ e $z$, exibindo os valores anunciados a cada round.
+    \item Qual será o custo estável final de $D_y(x)$ e $D_z(x)$ após convergência? Por qual caminho?
+    \item Como a técnica de \textit{poisoned reverse} teria evitado o problema neste cenário?
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q6 --- Seleção de Rota no BGP}
+Um roteador de borda do AS~2 recebe dois anúncios eBGP para o prefixo \texttt{203.0.113.0/24}:
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Anúncio} & \textbf{AS-PATH} & \textbf{Custo intra-AS até o gateway} \\
+\midrule
+A & AS3, AS5 & 10 \\
+B & AS7 & 25 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{enumerate}[label=(\alph*)]
+    \item Com \textit{local preference} igual para ambos, qual anúncio é selecionado e com base em qual critério?
+    \item O que muda se local preference de A = 200 e de B = 100? Qual critério passa a dominar?
+    \item Defina \textit{hot potato routing} e identifique em qual critério de seleção ele se manifesta.
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q7 --- OSPF Hierárquico}
+Em uma rede OSPF com Backbone (Área~0), Área~1 e Área~2:
+\begin{enumerate}[label=(\alph*)]
+    \item Qual é o nome e a função do roteador que conecta uma área local ao Backbone?
+    \item Por que os LSAs inundados dentro da Área~1 \textbf{não chegam} à Área~2 diretamente?
+    \item O que um ABR anuncia no Backbone em nome da sua área? Por que isso reduz a carga?
+    \item Um roteador interno da Área~1 precisa enviar tráfego para um host na Área~2. Descreva o caminho hierárquico obrigatório.
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q8 --- SDN vs.\ Roteamento Tradicional: Engenharia de Tráfego}
+O administrador quer forçar o tráfego de $u$ para $z$ pelo caminho $u \to v \to w \to z$, ignorando o caminho de menor custo $u \to x \to y \to z$ (custo 4).
+\begin{enumerate}[label=(\alph*)]
+    \item No roteamento tradicional com OSPF, qual é a dificuldade técnica? O que o administrador precisaria fazer e quais os efeitos colaterais?
+    \item No SDN com OpenFlow, como o controlador instrui os switches a seguir esse caminho alternativo? Que tipo de \textit{flow entry} seria instalada no switch $u$?
+    \item Por que o SDN permite essa granularidade de controle de forma mais natural do que o OSPF?
+\end{enumerate}
+\end{questao}
+
+% ======================================================
+\subsection*{Questões Difíceis (Q9--Q10)}
+% ======================================================
+
+\begin{questao}{✏️ Q9 --- Dijkstra Completo a partir de $x$}
+Usando o \textbf{mesmo grafo do texto} ($u$--$v$:2, $u$--$x$:1, $u$--$w$:5, $v$--$x$:2, $v$--$w$:3, $x$--$w$:3, $x$--$y$:1, $w$--$y$:1, $w$--$z$:5, $y$--$z$:2), execute Dijkstra tendo \textbf{$x$} como origem.
+\begin{enumerate}[label=(\alph*)]
+    \item Preencha a tabela de iterações completa (Steps 0--5) no mesmo formato do texto.
+    \item Derive a tabela de encaminhamento resultante em $x$ (destino, enlace de saída, custo).
+    \item Compare o enlace de saída dominante em $x$ com o enlace dominante encontrado em $u$ no texto. O que essa diferença revela sobre a topologia?
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q10 --- Cenário BGP Integrado: Multi-homing}
+A empresa TechCorp opera o AS~100 com dois uplinks: ISP-A (AS~200) e ISP-B (AS~300). Ambos anunciam o prefixo \texttt{8.8.4.0/24} para o AS~100. O AS~100 tem dois roteadores de borda: GW-A (conectado ao ISP-A) e GW-B (conectado ao ISP-B), além de vários roteadores internos.
+\begin{enumerate}[label=(\alph*)]
+    \item Como se classifica a sessão BGP entre AS~100 e ISP-A (iBGP ou eBGP)? Justifique.
+    \item Como a informação de alcançabilidade recebida por GW-A via eBGP é propagada para os roteadores internos do AS~100 (incluindo GW-B)?
+    \item O AS~100 prefere ISP-A por razões contratuais. Qual atributo BGP deve ser configurado, com qual valor relativo, para garantir essa preferência \textbf{independentemente} do AS-PATH ou NEXT-HOP?
+    \item Se o enlace com ISP-A falhar, o BGP converge para ISP-B. Compare esse comportamento com o RIP (baseado em DV): por que o RIP não é adequado para esse cenário inter-AS e qual o principal problema de robustez que surgiria?
+\end{enumerate}
+\end{questao}
+
+% ================================================================
+\clearpage
+
+\begin{center}
+\rule{\textwidth}{2.5pt}\\[8pt]
+{\LARGE\bfseries GABARITO COMENTADO}\\[4pt]
+{\large Capítulo 5 --- Plano de Controle}\\[6pt]
+{\small\itshape Consulte apenas após tentar resolver todas as questões acima.}\\[8pt]
+\rule{\textwidth}{2.5pt}
+\end{center}
+\vspace{1em}
+
+% ---- Q1 ----
+\begin{gabaritocaixa}{✅ Gabarito Q1 --- Verdadeiro ou Falso}
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{F.} O OSPF usa o algoritmo de \emph{estado de enlace} (Dijkstra). Cada roteador inunda LSAs (\textit{Link-State Advertisements}) para toda a rede e calcula rotas localmente. \textbf{RIP} é o protocolo de vetor de distâncias.
+    \item \textbf{V.} No SDN, os switches executam apenas o plano de dados (encaminham com base em \textit{flow tables} instaladas pelo controlador). O plano de controle --- cálculo de rotas, políticas --- reside inteiramente no controlador remoto.
+    \item \textbf{V.} O BGP anuncia o AS-PATH completo (ex.: \texttt{AS2, AS3, X}). Um AS que se identifica no path recebido rejeita o anúncio, prevenindo loops.
+    \item \textbf{F.} O ICMP é transportado \emph{dentro} de datagramas IP (campo Protocol = 1). Nunca há encapsulamento direto em Ethernet; o ICMP sempre passa pela camada de rede.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q2 ----
+\begin{gabaritocaixa}{✅ Gabarito Q2 --- Mensagens ICMP}
+\begin{enumerate}[label=(\arabic*)]
+    \item Ping enviado $\to$ \textbf{(B) Type~8, Code~0} --- \textit{Echo Request}. A resposta é Type~0, Code~0.
+    \item TTL expirado $\to$ \textbf{(C) Type~11, Code~0} --- \textit{Time Exceeded}. É a base do \texttt{traceroute}: cada roteador com TTL=0 responde com esse tipo e revela seu IP.
+    \item Porta UDP indisponível $\to$ \textbf{(A) Type~3, Code~3} --- \textit{Port Unreachable}. É o sinal de \textbf{parada} do \texttt{traceroute}: quando o UDP finalmente chega ao destino, este responde com 3/3.
+    \item Host inalcançável $\to$ \textbf{(D) Type~3, Code~1} --- \textit{Host Unreachable}. O Type~3 engloba todas as variantes de ``destino inalcançável''; o Code especifica o nível (0=rede, 1=host, 2=protocolo, 3=porta).
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q3 ----
+\begin{gabaritocaixa}{✅ Gabarito Q3 --- Roteamento $\times$ Encaminhamento}
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{Roteamento} $\to$ \textbf{Plano de Controle}: decide ``qual caminho percorrer'' considerando a rede inteira. \textbf{Encaminhamento} $\to$ \textbf{Plano de Dados}: move localmente o pacote da porta de entrada para a porta de saída de um único roteador.
+    \item \textbf{Roteamento}: escala \textbf{global} (fim-a-fim). Opera em milissegundos a segundos. \textbf{Encaminhamento}: escala \textbf{local} (um roteador). Opera em nanossegundos via hardware.
+    \item \textbf{Roteamento}: software na CPU --- protocolos OSPF, BGP, RIP; ou controlador SDN (OpenFlow). \textbf{Encaminhamento}: hardware especializado ASIC/TCAM que consulta a tabela de encaminhamento em velocidade de linha.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q4 ----
+\begin{gabaritocaixa}{✅ Gabarito Q4 --- Dijkstra: Análise de Iteração}
+\begin{enumerate}[label=(\alph*)]
+    \item No Step~1 o nó adicionado é \textbf{$x$} ($D(x)=1$): é o menor custo dentre os nós fora de $N'$ ($D(v)=2$, $D(w)=5$, $D(x)=1$, $D(y)=\infty$, $D(z)=\infty$). Dijkstra sempre escolhe o mínimo não definitivo.
+    \item Após Step~2 ($y$ é adicionado com $D(y)=2$, calculado ao relaxar os vizinhos de $x$): relaxa-se $w$ via $y$:
+    \[ D(w) = \min\!\bigl(D(w)_{\text{ant}},\; D(y)+c_{y,w}\bigr) = \min(4,\; 2+1) = \mathbf{3}, \quad p(w)=y \]
+    \item Enlace de saída em $u$ para $z$: \textbf{$(u,x)$}, custo total \textbf{4}. Caminho: $u \xrightarrow{1} x \xrightarrow{1} y \xrightarrow{2} z$. O enlace barato $u$--$x$ (custo 1) é a porta de entrada para toda a região leste da rede.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q5 ----
+\begin{gabaritocaixa}{✅ Gabarito Q5 --- Count-to-Infinity}
+\begin{enumerate}[label=(\alph*)]
+    \item Estado estável inicial: $D_y(x) = 4$ (direto); $D_z(x) = 5$ (via $y$: $1+4$).
+    \item Após $c_{x,y}$ mudar de 4 para 60 ($y$ não sabe que seu caminho passava \emph{por} $x$):
+    \begin{itemize}
+        \item \textbf{Round 1:} $y$ recalcula $D_y(x) = \min(60,\; 1+5) = 6$ via $z$. $z$ recalcula: $D_z(x) = 1+6 = 7$.
+        \item \textbf{Round 2:} $y$: $D_y(x) = \min(60,\; 1+7) = 8$. $z$: $D_z(x)=9$.
+        \item \textbf{Round 3:} $y$: $D_y(x) = 10$. $z$: $D_z(x)=11$. Incremento de 2 por round.
+    \end{itemize}
+    \item Custo final: $D_y(x) = \mathbf{60}$ (direto, pois $1+61=62>60$); $D_z(x) = \mathbf{61}$ (via $y$). Convergência após $\approx 28$ rounds, pois $4 + 2 \times 28 = 60$.
+    \item Com \textit{poisoned reverse}: quando $z$ usa $y$ como próximo salto para $x$, ele anuncia $D_z(x) = \infty$ para $y$. Assim, quando $c_{x,y}$ encarece, $y$ não enxerga $z$ como alternativa --- o loop nunca se forma, e $y$ detecta imediatamente que sua única rota válida é a direta (custo 60).
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q6 ----
+\begin{gabaritocaixa}{✅ Gabarito Q6 --- Seleção de Rota no BGP}
+\begin{enumerate}[label=(\alph*)]
+    \item Com \textit{local preference} igual, o 2º critério é o \textbf{menor AS-PATH}. B tem AS-PATH de comprimento 1 (só AS7); A tem comprimento 2 (AS3, AS5). Logo, \textbf{Anúncio B} é selecionado.
+    \item Se local preference de A = 200 $>$ 100 = B, o \textbf{1º critério} (maior local preference) já decide: \textbf{Anúncio A} é selecionado, independentemente do AS-PATH. O local preference é uma decisão de \emph{política interna} do AS.
+    \item \textbf{Hot potato routing}: o AS escolhe o gateway de saída com o menor custo \textbf{intra-domínio} (menor custo OSPF/IGP até a fronteira), ignorando o custo inter-domínio. Manifesta-se no \textbf{3º critério} da seleção BGP (``NEXT-HOP mais próximo''). O AS ``livra-se do pacote'' o mais rápido possível, transferindo a responsabilidade ao AS vizinho.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q7 ----
+\begin{gabaritocaixa}{✅ Gabarito Q7 --- OSPF Hierárquico}
+\begin{enumerate}[label=(\alph*)]
+    \item O \textbf{ABR (Area Border Router)}. Está conectado à área local e ao Backbone (Área~0), sumarizando rotas e fazendo a ponte entre os dois níveis hierárquicos.
+    \item Os LSAs são inundados \textbf{apenas dentro da área de origem}. O ABR não repassa LSAs individuais para outras áreas; ele sumariza as distâncias internas e anuncia apenas \emph{resumos agregados} no Backbone. Isso isola completamente a base de estado de enlace de cada área.
+    \item Os ABRs anunciam \textbf{sumários de rotas} (distâncias agregadas aos prefixos da sua área) no Backbone. Isso reduz o volume de LSAs em toda a rede, diminuindo o tamanho das bases de estado de enlace e o custo computacional do Dijkstra em cada roteador.
+    \item Roteador interno Área~1 $\to$ ABR Área~1 $\to$ Backbone (Área~0) $\to$ ABR Área~2 $\to$ host destino na Área~2. \textbf{Todo tráfego inter-áreas obrigatoriamente transita pelo Backbone.}
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q8 ----
+\begin{gabaritocaixa}{✅ Gabarito Q8 --- SDN vs.\ Roteamento Tradicional}
+\begin{enumerate}[label=(\alph*)]
+    \item No OSPF, as rotas seguem automaticamente o menor custo calculado por Dijkstra. Para forçar $u \to v \to w \to z$, o administrador precisaria \textbf{manipular os pesos de enlace} (ex.: aumentar o peso de $u$--$x$ artificialmente). Isso afeta \emph{todos} os fluxos que usam $u$--$x$, não apenas o tráfego $u \to z$ --- efeito colateral indesejado e difícil de reverter com precisão.
+    \item O controlador instala entradas de fluxo nas flow tables. Exemplo de regra no switch $u$:
+    \begin{center}\small
+    \texttt{match(IP\_dst = z, IP\_src = qualquer) $\to$ action(output: porta\_para\_v)}
+    \end{center}
+    Isso instrui $u$ a encaminhar pacotes com destino $z$ pela porta de $v$, sem alterar o comportamento de outros fluxos.
+    \item O SDN usa \textit{match+action generalizado} (combina campos de enlace/rede/transporte), permitindo controle por fluxo individual. O OSPF opera exclusivamente por IP de destino com o caminho de menor custo global --- não há mecanismo nativo de roteamento diferenciado por fluxo sem intervenção manual complexa.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q9 ----
+\begin{gabaritocaixa}{✅ Gabarito Q9 --- Dijkstra Completo a partir de $x$}
+\begin{enumerate}[label=(\alph*)]
+    \item Vizinhos diretos de $x$: $u$(1), $v$(2), $w$(3), $y$(1). Tabela de iterações:
+\begin{center}
+\begin{tabular}{c l c c c c c}
+\toprule
+\textbf{Step} & $N'$ & $D(u),p$ & $D(v),p$ & $D(w),p$ & $D(y),p$ & $D(z),p$ \\
+\midrule
+0 & $x$ & $1,x$ & $2,x$ & $3,x$ & $1,x$ & $\infty$ \\
+1 & $xu$ & & $2,x$ & $3,x$ & \textbf{1,x} & $\infty$ \\
+2 & $xuy$ & & \textbf{2,x} & $2,y$ & & $3,y$ \\
+3 & $xuyv$ & & & \textbf{2,y} & & $3,y$ \\
+4 & $xuyvw$ & & & & & \textbf{3,y} \\
+5 & $xuyvwz$ & & & & & \\
+\bottomrule
+\end{tabular}
+\end{center}
+\textit{Step~1: empate $u$/$y$ (D=1), escolhe $u$. Step~2: ao adicionar $y$, $D(w)=\min(3,1{+}1)=2$ via $y$; $D(z)=\min(\infty,1{+}2)=3$ via $y$. Step~3: empate $v$/$w$ (D=2), escolhe $v$.}
+
+    \item Tabela de encaminhamento em $x$:
+\begin{center}
+\begin{tabular}{ccc}
+\toprule
+\textbf{Destino} & \textbf{Enlace de saída} & \textbf{Custo} \\
+\midrule
+$u$ & $(x,u)$ direto & 1 \\
+$v$ & $(x,v)$ direto & 2 \\
+$y$ & $(x,y)$ direto & 1 \\
+$w$ & $(x,y)$ & 2 \\
+$z$ & $(x,y)$ & 3 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+    \item A partir de $u$ o enlace dominante era $(u,x)$ (4 de 5 destinos saíam por lá). A partir de $x$ o enlace dominante é $(x,y)$ ($w$ e $z$ saem por $y$). Isso revela que $x$--$y$ é o \textbf{corredor central} da topologia: conecta a região oeste ($u$, $v$) à região leste ($w$, $z$). O nó $x$ age como hub da rede --- sua centralidade se confirma por ser o ponto que minimiza distâncias em ambas as direções.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q10 ----
+\begin{gabaritocaixa}{✅ Gabarito Q10 --- Cenário BGP Integrado}
+\begin{enumerate}[label=(\alph*)]
+    \item As sessões entre AS~100 e ISP-A (AS~200) e entre AS~100 e ISP-B (AS~300) são \textbf{eBGP (external BGP)}: cruzam fronteiras entre sistemas autônomos distintos.
+    \item Após GW-A receber o prefixo via eBGP, ele usa \textbf{iBGP} para propagar a informação a todos os roteadores internos do AS~100 (inclusive GW-B). O iBGP garante que cada roteador do AS saiba como sair em direção ao prefixo externo.
+    \item O atributo a configurar é o \textbf{local preference}. Deve-se atribuir valor mais alto para rotas via ISP-A (ex.: local-pref = 200) e mais baixo para ISP-B (ex.: 100). O local preference é o \textbf{1º critério} de seleção --- sempre prevalece, independentemente de AS-PATH ou NEXT-HOP.
+    \item \textbf{Com BGP}: quando o enlace com ISP-A cai, a sessão eBGP é derrubada, o anúncio via ISP-A é retirado e o BGP converge automaticamente para ISP-B (dezenas de segundos a alguns minutos). \textbf{Com RIP}: o RIP é um protocolo \emph{intra-AS} (não opera entre domínios de administração distintos). Se aplicado inter-domínio, sofreria do \textit{count-to-infinity} em falhas de enlace, convergindo lentamente de forma oscilante e instável --- além de não suportar políticas comerciais (local preference, AS-PATH filtering), que são a razão de existir do BGP.
+\end{enumerate}
+\end{gabaritocaixa}
 
 \end{document}

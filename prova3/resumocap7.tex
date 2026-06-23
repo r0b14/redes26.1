@@ -1,0 +1,871 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazilian]{babel}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{geometry}
+\geometry{a4paper, top=1cm, bottom=1.3cm, left=1.5cm, right=1.5cm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{colortbl}
+\usepackage{tcolorbox}
+\usepackage{tikz}
+\usepackage{microtype}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{enumitem}
+
+\usetikzlibrary{positioning, arrows.meta, fit, backgrounds, calc}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    pdftitle={Resumo 6.7 + Redes Móveis - Síntese Integradora},
+    pdfpagemode=FullScreen,
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[R]{\thepage}
+
+% ---- tcolorboxes padrão ----
+\newtcolorbox{reflexao}{
+    colback=yellow!5!white,
+    colframe=yellow!60!black,
+    title=\textbf{\boldmath 🧠 Reflexão Crítica},
+    sharp corners=rounded,
+    boxrule=0.8pt,
+    fonttitle=\bfseries,
+    coltitle=black
+}
+\newtcolorbox{nota}{
+    colback=blue!5!white,
+    colframe=blue!60!black,
+    title=\textbf{\boldmath 📌 Nota / Atenção},
+    sharp corners=rounded,
+    boxrule=0.8pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+\newtcolorbox{pratico}{
+    colback=green!5!white,
+    colframe=green!60!black,
+    title=\textbf{\boldmath 🛠️ Aplicação Prática},
+    sharp corners=rounded,
+    boxrule=0.8pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+\newtcolorbox{analogia}{
+    colback=purple!5!white,
+    colframe=purple!60!black,
+    title=\textbf{\boldmath 💡 Analogia},
+    sharp corners=rounded,
+    boxrule=0.8pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+\newtcolorbox{prova}{
+    colback=red!5!white,
+    colframe=red!55!black,
+    title=\textbf{\boldmath 🎯 Cai na Prova},
+    sharp corners=rounded,
+    boxrule=1.0pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+
+% ---- tcolorboxes de questões ----
+\definecolor{corquestao}{RGB}{180,70,0}
+\definecolor{corgabarito}{RGB}{0,100,75}
+
+\newtcolorbox{questao}[1]{
+    colback=orange!4!white,
+    colframe=corquestao,
+    title=\textbf{#1},
+    sharp corners=rounded,
+    boxrule=0.9pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+\newtcolorbox{gabaritocaixa}[1]{
+    colback=corgabarito!5!white,
+    colframe=corgabarito,
+    title=\textbf{#1},
+    sharp corners=rounded,
+    boxrule=0.9pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+
+\title{6.7 + Redes Móveis: Síntese Integradora}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{fancy}
+
+\noindent\textit{Esse documento fecha a Prova~3 cobrindo a Seção~6.7 (\textit{Um dia na vida de uma requisição web}) --- que integra todos os protocolos dos Cap.~5 e Cap.~6 em um único cenário cronológico --- e a Introdução às Redes Móveis/Sem Fio, alvo da Q5. O foco é a ordem exata dos protocolos (pegadinha recorrente) e o conceito de geração celular com suas técnicas de acesso.}
+
+\section*{Mapa do conteúdo}
+
+\begin{figure}[h!]
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[
+    node distance=0.9cm and 1.0cm,
+    block/.style={draw=gray!80, fill=gray!10, rounded corners, align=center, minimum height=1.1cm, minimum width=2.5cm, font=\small},
+    redblock/.style={block, fill=red!12, draw=red!40},
+    blueblock/.style={block, fill=blue!12, draw=blue!40},
+    greenblock/.style={block, fill=green!12, draw=green!50!black},
+    arrow/.style={-Stealth, thick, draw=gray!70}
+]
+    \node[blueblock] (cap5) {Cap.~5\\Plano de Controle\\(OSPF, BGP)};
+    \node[blueblock, right=2.0cm of cap5] (cap6) {Cap.~6\\Camada de Enlace\\(ARP, MAC, Switch)};
+    \node[redblock, below right=1.0cm and 0.2cm of cap5] (s67) {6.7 --- Síntese\\DHCP → ARP → DNS\\→ TCP → HTTP};
+    \node[greenblock, right=2.0cm of s67] (mob) {Redes Móveis\\1G→5G\\FDMA/TDMA/CDMA/OFDMA};
+    \node[block, below=1.0cm of s67] (q3) {\textbf{Q3} da prova\\Sequência completa\\de protocolos};
+    \node[block, below=1.0cm of mob] (q5) {\textbf{Q5} da prova\\Evolução celular\\e técnicas de acesso};
+
+    \draw[arrow] (cap5) -- (s67);
+    \draw[arrow] (cap6) -- (s67);
+    \draw[arrow] (s67) -- (mob);
+    \draw[arrow] (s67) -- (q3);
+    \draw[arrow] (mob) -- (q5);
+\end{tikzpicture}
+}
+\caption{Dependência lógica: 6.7 consolida o Cap.~5 (roteamento) e o Cap.~6 (enlace) num cenário fim-a-fim; Redes Móveis é tópico independente mas cobrado na Q5.}
+\end{figure}
+
+\hrulefill
+
+% ================================================================
+\section{6.7 --- Um dia na vida de uma requisição web}
+% ================================================================
+
+\subsection{O cenário}
+
+Um \textbf{cliente móvel} (laptop) chega a uma rede de campus e quer abrir \texttt{www.google.com}. O que parece trivial aciona protocolos de \textbf{todas as camadas}, nessa ordem exata --- que é exatamente o que a \textbf{Q3} exige.
+
+\begin{table}[h!]
+\centering
+\caption{Endereços do cenário (slides 6-101)}
+\label{tab:cenario67}
+\begin{tabular}{ll}
+\toprule
+\textbf{Elemento} & \textbf{Endereço} \\
+\midrule
+Rede do campus & \texttt{68.80.2.0/24} \\
+Rede do provedor (Comcast) & \texttt{68.80.0.0/13} \\
+Rede do Google & \texttt{64.233.160.0/19} \\
+Servidor web do Google & \texttt{64.233.169.105} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{prova}
+A banca penaliza quem inverte etapas. A ordem cronológica correta e inviolável é:
+\[
+\textbf{DHCP} \;\longrightarrow\; \textbf{ARP} \;\longrightarrow\; \textbf{Switch} \;\longrightarrow\; \textbf{DNS} \;\longrightarrow\; \textbf{OSPF/BGP} \;\longrightarrow\; \textbf{TCP} \;\longrightarrow\; \textbf{HTTP}
+\]
+Nunca DNS antes de DHCP; nunca HTTP antes do handshake TCP.
+\end{prova}
+
+\subsection{A sequência cronológica --- Fluxo de protocolos}
+
+\begin{figure}[h!]
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[
+    step/.style={rectangle, draw=gray!80, fill=gray!12, rounded corners, align=center,
+                 minimum width=2.7cm, minimum height=1.3cm, font=\small\bfseries},
+    detalhe/.style={font=\scriptsize, text=blue!70, align=center},
+    arrow/.style={-Stealth, very thick, draw=gray!60}
+]
+    % Blocos da sequência
+    \node[step, fill=blue!15, draw=blue!60]   (dhcp)   {\textcircled{1}\\DHCP\\obter identidade};
+    \node[step, fill=cyan!12, draw=cyan!60, right=1.3cm of dhcp]   (arp)    {\textcircled{2}\\ARP\\MAC do gateway};
+    \node[step, fill=gray!18, draw=gray!60, right=1.3cm of arp]    (sw)     {\textcircled{3}\\Switch\\self-learning};
+    \node[step, fill=orange!15, draw=orange!60, right=1.3cm of sw]  (dns)    {\textcircled{4}\\DNS\\nome $\to$ IP};
+    \node[step, fill=green!12, draw=green!60, right=1.3cm of dns]   (tcp)    {\textcircled{5}\\TCP\\3-way handshake};
+    \node[step, fill=red!12, draw=red!60, right=1.3cm of tcp]      (http)   {\textcircled{6}\\HTTP\\GET + Reply};
+
+    % Setas
+    \draw[arrow] (dhcp) -- (arp);
+    \draw[arrow] (arp)  -- (sw);
+    \draw[arrow] (sw)   -- (dns);
+    \draw[arrow] (dns)  -- (tcp);
+    \draw[arrow] (tcp)  -- (http);
+
+    % Detalhes abaixo de cada bloco
+    \node[detalhe, below=0.4cm of dhcp] {UDP bcast\\FF:FF:FF:FF:FF:FF\\IP + GW + DNS};
+    \node[detalhe, below=0.4cm of arp]  {bcast local\\resolve IP\_GW\\$\to$ MAC\_GW};
+    \node[detalhe, below=0.4cm of sw]   {aprende MAC\\por origem\\encaminha/flood};
+    \node[detalhe, below=0.4cm of dns]  {UDP→IP\\roteado (OSPF/BGP)\\retorna IP destino};
+    \node[detalhe, below=0.4cm of tcp]  {SYN\\SYNACK\\ACK};
+    \node[detalhe, below=0.4cm of http] {GET /\\200 OK\\página exibida};
+
+    % Camadas (rótulos acima)
+    \node[font=\tiny\bfseries, text=blue!70, above=0.3cm of dhcp] {Aplicação/UDP};
+    \node[font=\tiny\bfseries, text=cyan!70, above=0.3cm of arp]  {Enlace (L2)};
+    \node[font=\tiny\bfseries, text=gray!70, above=0.3cm of sw]   {Enlace (L2)};
+    \node[font=\tiny\bfseries, text=orange!70, above=0.3cm of dns]{Aplicação/UDP};
+    \node[font=\tiny\bfseries, text=green!60!black, above=0.3cm of tcp] {Transporte};
+    \node[font=\tiny\bfseries, text=red!70, above=0.3cm of http]  {Aplicação/TCP};
+\end{tikzpicture}
+}
+\caption{Os 6 passos cronológicos da requisição web --- cada cor representa uma camada diferente.}
+\label{fig:seq67}
+\end{figure}
+
+\subsection{Passo a passo comentado}
+
+\paragraph{1. DHCP --- ``entrar'' na rede (slides 6-102 e 6-103)}
+
+O laptop chega sem IP. O \textbf{DHCP Request} é encapsulado em UDP $\to$ IP (src=\texttt{0.0.0.0}, dst=\texttt{255.255.255.255}) $\to$ quadro~802.3 com destino \texttt{FF:FF:FF:FF:FF:FF} (broadcast físico). O roteador, que roda o servidor DHCP, responde com \textbf{DHCP ACK} contendo três informações críticas: \textbf{IP próprio}, \textbf{IP do gateway} e \textbf{IP do servidor DNS}.
+
+\paragraph{2. ARP --- descobrir o MAC do gateway (slide 6-104)}
+
+O cliente já tem a query DNS montada (UDP→IP→Eth), mas para enviar o \textbf{quadro} ao roteador precisa do seu \textbf{MAC}. O \textbf{ARP Request} é enviado em broadcast \emph{apenas dentro da LAN}. O roteador responde com \textbf{ARP Reply} em unicast. A partir daí, o cliente preenche o campo \textit{MAC destino} do quadro com \texttt{MAC\_GW}.
+
+\begin{nota}
+\textbf{Pegadinha clássica de Q1/V/F:} ``O host de A envia um ARP Request para todos os hospedeiros, comutadores e roteadores da rede sempre que precisa falar com B (em outra sub-rede).'' $\to$ \textbf{FALSO.} O ARP é \emph{estritamente local à sub-rede}. Para destinos externos, o cliente resolve o MAC do \textbf{gateway} --- não do destino final --- e apenas na sua LAN. O ARP nunca cruza roteadores.
+\end{nota}
+
+\paragraph{3. Switch --- self-learning (item explícito da Q3)}
+
+O quadro atravessa o switch da LAN. O switch é \textit{plug-and-play}: ao ver o \textbf{MAC de origem} no quadro que chega na porta $k$, registra \texttt{MAC\_origem $\to$ porta $k$} na tabela de comutação. Encaminha o quadro para o roteador por unicast (se já aprendeu a porta) ou por flooding (se ainda não sabe).
+
+\paragraph{4. DNS --- nome $\to$ IP (slide 6-105)}
+
+O datagrama com a query DNS sai do cliente (com MAC destino = \texttt{MAC\_GW}), passa pelo switch até o roteador. Dali é \textbf{roteado} --- via OSPF/IS-IS na rede intra-AS e via BGP entre ASes --- até o servidor DNS, que responde com \texttt{64.233.169.105}.
+
+\paragraph{5. Roteamento OSPF/BGP no caminho}
+
+As tabelas de encaminhamento dos roteadores intermediários foram construídas por:
+\begin{itemize}[noitemsep]
+    \item \textbf{Intra-AS} (dentro do provedor): OSPF ou IS-IS (estado de enlace) $\to$ encapsulados \textbf{diretamente sobre IP} (OSPF = protocolo~89).
+    \item \textbf{Inter-AS} (entre provedores): BGP (path vector) $\to$ encapsulado sobre \textbf{TCP porta~179}.
+\end{itemize}
+
+\begin{prova}
+Três pegadinhas recorrentes de V/F:
+\begin{itemize}[noitemsep]
+    \item \textbf{``OSPF roda sobre TCP''} $\to$ \textbf{Falso}. OSPF usa IP diretamente (protocolo~89). É o BGP que usa TCP~179.
+    \item \textbf{``RIP é baseado em vetor de caminhos''}  $\to$ \textbf{Falso}. RIP é \emph{vetor de distâncias} (Bellman-Ford), roda sobre UDP~520. Vetor de caminhos (path vector) é o \textbf{BGP}.
+    \item \textbf{``ICMP roda sobre UDP''} $\to$ \textbf{Falso}. ICMP é encapsulado diretamente em IP (protocolo~1), sem TCP ou UDP.
+\end{itemize}
+\end{prova}
+
+\paragraph{6. TCP --- handshake de 3 vias (slide 6-106)}
+
+Antes de qualquer byte HTTP, o cliente abre um socket TCP com o servidor web. O \textbf{SYN} é roteado inter-domínio até o Google; o servidor responde com \textbf{SYNACK}; o cliente confirma com \textbf{ACK}. Conexão estabelecida.
+
+\paragraph{7. HTTP --- a página (slide 6-107)}
+
+O \textbf{HTTP GET} é encapsulado no segmento TCP $\to$ datagrama IP $\to$ roteado até \texttt{www.google.com}. O servidor responde com \textbf{HTTP Reply} e a página é exibida.
+
+\subsection{Tabela-resumo: protocolo $\times$ camada $\times$ encapsulamento}
+
+\begin{table}[h!]
+\centering
+\caption{Todos os protocolos do cenário 6.7 com encapsulamento e endereçamento-chave}
+\label{tab:resumo67}
+\begin{tabularx}{\textwidth}{lXXX}
+\toprule
+\textbf{Etapa} & \textbf{Protocolo} & \textbf{Camada / Encapsulamento} & \textbf{Endereçamento-chave} \\
+\midrule
+Obter IP         & DHCP         & Aplicação / UDP→IP→Eth (broadcast)         & MAC dst \texttt{FF:FF:FF:FF:FF:FF} \\
+MAC do gateway   & ARP          & Enlace / quadro Ethernet (broadcast LAN)   & resolve IP\_GW $\to$ MAC\_GW (só na LAN) \\
+Comutação        & (self-learn) & Enlace                                      & aprende por MAC de \textbf{origem} \\
+Nome $\to$ IP    & DNS          & Aplicação / UDP→IP                          & IP do DNS recebido via DHCP \\
+Rotas intra-AS   & OSPF/IS-IS   & Rede (controle) / \textbf{direto sobre IP} & protocolo 89; intra-AS \\
+Rotas inter-AS   & BGP          & Rede (controle) / \textbf{TCP porta~179}   & path vector; inter-AS \\
+Conexão          & TCP          & Transporte / IP                             & SYN / SYNACK / ACK \\
+Página           & HTTP         & Aplicação / TCP→IP                          & porta 80 (HTTP) ou 443 (HTTPS) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{reflexao}
+\textbf{Invariante de endereçamento (essencial para Q3 e Q4):} Os endereços \textbf{IP de origem e destino permanecem constantes fim-a-fim}; os endereços \textbf{MAC mudam a cada salto}. Cada vez que o datagrama atravessa um roteador, o quadro Ethernet é refeito: novo MAC de origem (interface de saída do roteador) e novo MAC de destino (próximo nó). O IP do cliente e o IP do servidor nunca mudam durante o percurso.
+\end{reflexao}
+
+\subsection{Conexão com a Q4 da prova-base --- Cenário /27}
+
+A \textbf{Q4} é uma variação aplicada do 6.7: duas sub-redes (LAN~X e LAN~Y), máscara \texttt{255.255.255.224} (/27), servidor B = \texttt{192.228.17.57}, cliente K vindo da Internet.
+
+\[
+\text{/27:} \quad 2^{32-27} = 2^5 = 32 \text{ endereços por sub-rede} \implies 30 \text{ hosts úteis}
+\]
+
+\begin{table}[h!]
+\centering
+\caption{Sub-redes do cenário Q4}
+\label{tab:q4subredes}
+\begin{tabular}{llll}
+\toprule
+\textbf{Sub-rede} & \textbf{End. de rede} & \textbf{Faixa utilizável} & \textbf{Broadcast} \\
+\midrule
+LAN~X & \texttt{192.228.17.32/27} & \texttt{.33} -- \texttt{.62} & \texttt{192.228.17.63} \\
+LAN~Y & \texttt{192.228.17.64/27} & \texttt{.65} -- \texttt{.94} & \texttt{192.228.17.95} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+O servidor B (\texttt{.57}) está na \textbf{LAN~X}. A tabela de encaminhamento de R1 aplica \textit{longest prefix match}:
+
+\begin{table}[h!]
+\centering
+\caption{Tabela de encaminhamento do Roteador R1 (Q4)}
+\label{tab:r1forwarding}
+\begin{tabular}{lll}
+\toprule
+\textbf{Rede destino} & \textbf{Prefixo} & \textbf{Interface de saída} \\
+\midrule
+\texttt{192.228.17.32} & /27 & porta LAN~X \\
+\texttt{192.228.17.64} & /27 & porta LAN~Y \\
+\texttt{0.0.0.0} & /0 (default) & porta Internet (uplink) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{pratico}
+Sequência de protocolos quando K (Internet) acessa a página de B: (1) DNS resolve o hostname para \texttt{192.228.17.57}; (2) TCP SYN de K roteia via Internet + BGP + OSPF até R1; (3) R1 faz longest prefix match: \texttt{.57} cai em \texttt{192.228.17.32/27} $\to$ LAN~X; (4) R1 faz ARP na LAN~X para obter o MAC de B; (5) R1 encaminha o SYN para B; (6) SYNACK + ACK completam o handshake; (7) HTTP GET e Reply trafegam sobre a conexão TCP estabelecida.
+\end{pratico}
+
+\hrulefill
+
+% ================================================================
+\section{Redes Móveis --- Introdução}
+% ================================================================
+
+\subsection{Evolução das gerações (1G $\to$ 5G)}
+
+\begin{figure}[h!]
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tikzpicture}[
+    gen/.style={rectangle, draw=gray!70, rounded corners, align=center,
+                minimum width=3.2cm, minimum height=2.2cm, font=\small\bfseries},
+    arrow/.style={-Stealth, very thick, draw=gray!60}
+]
+    \node[gen, fill=gray!15]   (g1) at (0,0)   {\textbf{1G}\\1980s\\FDMA\\Voz analógica\\1 antena};
+    \node[gen, fill=blue!10]   (g2) at (4,0)   {\textbf{2G}\\1990s\\TDMA (GSM)\\Voz digital\\SMS/GPRS};
+    \node[gen, fill=green!10]  (g3) at (8,0)   {\textbf{3G}\\2000s\\CDMA\\Dados\\Foto/Vídeo};
+    \node[gen, fill=orange!10] (g4) at (12,0)  {\textbf{4G/LTE}\\2010s\\OFDM+MIMO\\Streaming\\IP fim-a-fim};
+    \node[gen, fill=red!8]     (g5) at (16,0)  {\textbf{5G}\\2020s\\OFDMA+\\Massive MIMO\\mmWave/IoE};
+
+    \draw[arrow] (g1) -- node[above,font=\tiny\bfseries]{digitalização} (g2);
+    \draw[arrow] (g2) -- node[above,font=\tiny\bfseries]{dados móveis} (g3);
+    \draw[arrow] (g3) -- node[above,font=\tiny\bfseries]{IP fim-a-fim} (g4);
+    \draw[arrow] (g4) -- node[above,font=\tiny\bfseries]{ultra-densa} (g5);
+\end{tikzpicture}
+}
+\caption{Evolução das gerações celulares: cada geração introduz uma nova técnica de acesso ao meio rádio.}
+\label{fig:geracoes}
+\end{figure}
+
+\begin{table}[h!]
+\centering
+\caption{Comparativo das gerações celulares}
+\label{tab:geracoes}
+\begin{tabularx}{\textwidth}{lXXXX}
+\toprule
+\textbf{Geração} & \textbf{Acesso/Mult.} & \textbf{Serviços} & \textbf{Caract. marcante} & \textbf{Antenas} \\
+\midrule
+\textbf{1G} & FDMA & Voz analógica & Analógico, sem segurança & 1 \\
+\textbf{2G} & TDMA (GSM/EDGE) & Voz digital, SMS, dados lentos & Digitalização da voz & $\sim$2 \\
+\textbf{3G} & CDMA (W-CDMA) & Foto, vídeo, redes sociais & Espalhamento espectral & até 4 \\
+\textbf{4G} & OFDM + MIMO (LTE) & Streaming, pagamento móvel & IP fim-a-fim, alta taxa & até 16 \\
+\textbf{5G} & OFDMA + Massive MIMO & AR/VR, IoE, URLLC & mmWave, redes ultra-densas & $\sim$128 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Técnicas de múltiplo acesso}
+
+A pergunta fundamental de toda rede sem fio é: \textbf{como múltiplos usuários compartilham o mesmo meio rádio sem se interferir?} Cada geração respondeu de forma diferente:
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+    root/.style={rectangle, draw=gray!80, fill=gray!12, rounded corners, align=center,
+                 minimum width=3.5cm, minimum height=1.0cm, font=\small\bfseries},
+    leaf/.style={rectangle, draw=blue!50, fill=blue!7, rounded corners, align=center,
+                 minimum width=3.2cm, minimum height=1.8cm, font=\small},
+    arrow/.style={-Stealth, thick, draw=gray!60}
+]
+    \node[root] (ma) {Múltiplo Acesso\\(compartilhar o meio rádio)};
+
+    \node[leaf, below left=1.2cm and 3.5cm of ma]  (fdma) {\textbf{FDMA}\\divide em\\faixas de frequência\\(1G)};
+    \node[leaf, below left=1.2cm and 0.8cm of ma]  (tdma) {\textbf{TDMA}\\divide em\\slots de tempo\\(2G / GSM)};
+    \node[leaf, below right=1.2cm and 0.8cm of ma] (cdma) {\textbf{CDMA}\\todos na banda inteira\\separados por código\\(3G)};
+    \node[leaf, below right=1.2cm and 3.5cm of ma] (ofdma){\textbf{OFDMA}\\subportadoras ortogonais\\alocadas dinamicamente\\(4G/5G)};
+
+    \draw[arrow] (ma.south) -- ++(0,-0.4) -| (fdma.north);
+    \draw[arrow] (ma.south) -- ++(0,-0.4) -| (tdma.north);
+    \draw[arrow] (ma.south) -- ++(0,-0.4) -| (cdma.north);
+    \draw[arrow] (ma.south) -- ++(0,-0.4) -| (ofdma.north);
+\end{tikzpicture}
+\caption{Classificação das principais técnicas de acesso múltiplo ao meio rádio.}
+\label{fig:ma}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{FDMA} (\textit{Frequency Division Multiple Access}) --- o espectro é dividido em \textbf{bandas de frequência fixas}; cada usuário recebe uma banda exclusiva. Banda ociosa \textbf{fica desperdiçada}.
+    \item \textbf{TDMA} (\textit{Time Division Multiple Access}) --- acesso em rodadas; cada estação ganha um \textbf{slot de tempo} por quadro. Slot não usado também \textbf{fica ocioso}.
+    \item \textbf{CDMA} (\textit{Code Division Multiple Access}) --- \textbf{todos transmitem na banda inteira ao mesmo tempo}, separados por \textbf{códigos ortogonais} (\textit{spread spectrum}). Não há desperdício de capacidade por usuário inativo.
+    \item \textbf{OFDMA} (\textit{Orthogonal FDMA}) --- evolução usada em 4G/5G: divide a banda em muitas \textbf{subportadoras ortogonais} alocadas \textit{dinamicamente} a usuários. Combina eficiência espectral com robustez a interferência.
+\end{itemize}
+
+\begin{analogia}
+\textbf{CDMA como festa multilíngue:} numa sala lotada, falantes de \textbf{português} se entendem entre si e ``filtram'' os de \textbf{japonês} como ruído de fundo --- o código é o idioma. Você recebe tudo, mas só decodifica o sinal com o seu código. Isso é o \textit{spread spectrum}: todos na mesma frequência, ao mesmo tempo, separados matematicamente.
+\end{analogia}
+
+\subsection{Conceito de célula e reuso de frequências}
+
+A sacada da rede \textbf{celular} é dividir a área geográfica em \textbf{células} e \textbf{reusar frequências} em células não adjacentes, multiplicando a capacidade total sem aumentar o espectro.
+
+\paragraph{Cálculo de capacidade (exercício dos slides):}
+
+\textbf{Dado:} largura de canal de voz = 30\,kHz; banda total disponível = 25\,MHz.
+\[
+\text{Canais unidirecionais} = \frac{25\,\text{MHz}}{30\,\text{kHz}} = \frac{25\,000}{30} \approx 833
+\quad\Rightarrow\quad
+\text{Pares bidirecionais} \approx \frac{833}{2} \approx 416
+\]
+
+\textbf{Com 250 células e reuso de frequências:}
+\[
+416 \times 250 = 104\,000 \text{ canais simultâneos} \approx 125\times\text{ melhor que uma única célula}
+\]
+
+\begin{reflexao}
+Por que reusar funciona: a potência do sinal decai com a distância ($\propto d^{-\alpha}$, $\alpha \approx 2$--4). Células suficientemente afastadas usam a \textbf{mesma faixa de frequência} sem interferência mútua. Isso viabiliza atender milhões de assinantes com um espectro limitado --- é o princípio que move toda a indústria celular.
+\end{reflexao}
+
+\subsection{Componentes e mobilidade}
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+    comp/.style={rectangle, draw=gray!70, fill=gray!10, rounded corners, align=center,
+                 minimum width=2.8cm, minimum height=1.2cm, font=\small\bfseries},
+    arrow/.style={-Stealth, very thick},
+    radio/.style={draw=red!60, -Stealth, very thick, dashed}
+]
+    \node[comp, fill=blue!12] (ue)   {UE\\(User Equipment)\\+ SIM/USIM};
+    \node[comp, fill=green!12, right=2.5cm of ue] (enb) {eNodeB\\(eNB 4G)\\ERB / antenas};
+    \node[comp, fill=orange!12, right=2.5cm of enb] (core) {Núcleo da Rede\\(EPC 4G /\\NG-Core 5G)};
+    \node[comp, fill=gray!15, below=1.2cm of enb] (enb2) {Outra eNB};
+
+    \draw[radio] (ue) -- node[above, font=\small] {rádio (ar)} (enb);
+    \draw[arrow] (enb) -- (core);
+    \draw[arrow, dashed, draw=purple!60] (enb) -- node[right, font=\tiny\bfseries, text=purple] {Handover} (enb2);
+\end{tikzpicture}
+\caption{Arquitetura básica de uma rede celular 4G: UE, eNB e núcleo (EPC).}
+\label{fig:componentes}
+\end{figure}
+
+\begin{itemize}
+    \item \textbf{UE} (\textit{User Equipment}) --- o terminal/smartphone. Requer o \textbf{SIM/USIM} (módulo de identidade do assinante), que autentica o usuário na rede.
+    \item \textbf{ERB / eNodeB (eNB)} --- a estação rádio-base. No 4G/LTE o nome é \textbf{eNB} (\textit{evolved Node B}): ``e'' de evolução sobre o 3G. No 5G chama-se \textbf{gNB} (\textit{giga Node B}).
+    \item \textbf{Handover / Handoff} --- transferência da conexão de uma ERB para outra enquanto o usuário se move, mantendo a chamada/sessão ativa sem interrupção.
+    \item \textbf{Location Update} --- atualização da localização do terminal no núcleo da rede (necessário para que a rede saiba onde entregar chamadas e dados).
+\end{itemize}
+
+\subsection{Espectro licenciado $\times$ não-licenciado}
+
+\begin{table}[h!]
+\centering
+\caption{Comparativo entre espectro licenciado (celular) e não-licenciado (Wi-Fi)}
+\label{tab:lic_vs_nonlic}
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+\textbf{Aspecto} & \textbf{Celular (licenciado)} & \textbf{Wi-Fi (não-licenciado)} \\
+\midrule
+\textbf{Espectro} & Comprado em leilão pela operadora (exclusivo) & Bandas ISM livres (2,4 / 5 GHz) \\
+\textbf{Interferência} & Mínima (uso exclusivo) $\to$ QoS previsível & Alta (contenção) $\to$ interferência comum \\
+\textbf{Acesso ao meio} & FDMA/TDMA/CDMA/OFDMA coordenado pela ERB & CSMA/CA (\textit{random access}, contenção) \\
+\textbf{Cobertura} & Ampla (células de km) & Curta (dezenas de metros) \\
+\textbf{Custo de entrada} & Altíssimo (leilões bilionários) & Baixo (equipamento barato) \\
+\textbf{Padronização} & \textbf{3GPP} (3G, LTE, 5G) & \textbf{IEEE 802.11} (Wi-Fi) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{reflexao}
+\textbf{Trade-off central:} espectro licenciado troca \textbf{custo altíssimo} por \textbf{garantia de qualidade e ausência de interferência}. O não-licenciado troca \textbf{gratuidade} por \textbf{interferência e serviço de melhor-esforço}. Por isso o celular sustenta serviços de tempo-real em escala nacional (voz, 5G URLLC) e o Wi-Fi domina ambientes locais. Nas redes 5G, surgem estratégias de uso de espectro não-licenciado (\textit{Licensed Assisted Access}) para ampliar capacidade em ambientes densos.
+\end{reflexao}
+
+\subsection{Órgãos de padronização}
+
+\begin{table}[h!]
+\centering
+\caption{Principais organismos de padronização em redes}
+\label{tab:padroes}
+\begin{tabular}{ll}
+\toprule
+\textbf{Organismo} & \textbf{Escopo} \\
+\midrule
+\textbf{ITU} (\textit{Int'l Telecommunication Union}) & Telecom em geral (fixa, móvel, satélite, TV) \\
+\textbf{IETF} (\textit{Int'l Engineering Task Force}) & Protocolos Internet (IP, TCP, HTTP, DNS, BGP) \\
+\textbf{IEEE} & 802.3 (Ethernet), 802.11 (Wi-Fi), 802.15 (Bluetooth) \\
+\textbf{3GPP} (\textit{3rd Generation Partnership Project}) & Especificações 3G, LTE (4G) e 5G NR \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\hrulefill
+
+\section*{Fechamento: Amarração com as Questões da Prova}
+
+\begin{table}[h!]
+\centering
+\caption{Mapeamento dos tópicos deste documento com as questões da prova-base}
+\label{tab:relacao_prova}
+\begin{tabularx}{\textwidth}{lXX}
+\toprule
+\textbf{Questão} & \textbf{Conceito aplicado} & \textbf{Como este doc.\ resolve} \\
+\midrule
+\textbf{Q1 (V/F)} & ARP local à sub-rede; encapsulamento de OSPF/BGP/RIP & Seção~1.2, caixas de \textit{Nota} e \textit{Cai na Prova} \\
+\textbf{Q3} & Sequência completa de protocolos (DHCP→HTTP) & Seções~1.2--1.4, Figura~\ref{fig:seq67}, Tabela~\ref{tab:resumo67} \\
+\textbf{Q4} & Tabela de encaminhamento R1, /27, MAC/IP por salto & Seção~1.5, Tabelas~\ref{tab:q4subredes}~e~\ref{tab:r1forwarding} \\
+\textbf{Q5} & Evolução 1G→5G, técnicas de acesso & Seções~2.1--2.3, Tabelas~\ref{tab:geracoes} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\hrulefill
+
+% ================================================================
+\section*{Seção de Questões Práticas --- 6.7 + Redes Móveis}
+% ================================================================
+
+\begin{nota}
+Esta seção contém \textbf{10 questões práticas} no estilo da Prova~3: \textbf{4 fáceis} (Q1--Q4), \textbf{4 médias} (Q5--Q8) e \textbf{2 difíceis} (Q9--Q10). O \textbf{gabarito comentado} está ao final deste documento, após o separador visual. Resolva todas as questões \emph{antes} de consultar as respostas.
+\end{nota}
+
+\subsection*{Questões Fáceis (Q1--Q4)}
+
+\begin{questao}{✏️ Q1 --- Verdadeiro ou Falso: Sequência e Encapsulamento}
+Classifique como \textbf{V} ou \textbf{F} e \textbf{corrija as falsas} em uma linha:
+\begin{enumerate}[label=(\alph*)]
+    \item No cenário 6.7, o cliente executa o protocolo DHCP antes do ARP, pois precisa do IP do gateway antes de poder montar um quadro ARP.
+    \item O ARP Request enviado pelo cliente percorre toda a Internet em broadcast para localizar o endereço MAC do servidor web de destino.
+    \item O protocolo OSPF é encapsulado diretamente sobre IP (protocolo~89), enquanto o BGP roda sobre TCP na porta~179.
+    \item O RIP é classificado como protocolo de \textit{path vector} pois anuncia o caminho completo de ASes até o destino, prevenindo loops de roteamento.
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q2 --- Associação: Protocolo $\times$ Camada $\times$ Encapsulamento}
+Associe cada protocolo ao seu encapsulamento e camada corretos:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Protocolo} & \textbf{Encapsulamento / Camada} \\
+\midrule
+(1) DHCP & (~~~~) \\
+(2) ARP  & (~~~~) \\
+(3) OSPF & (~~~~) \\
+(4) BGP  & (~~~~) \\
+(5) DNS  & (~~~~) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Opções:}
+(A) Aplicação / UDP→IP→Ethernet broadcast \quad
+(B) Enlace / quadro Ethernet broadcast (local à LAN) \\
+(C) Rede (controle) / TCP porta~179 \quad
+(D) Rede (controle) / diretamente sobre IP (proto~89) \quad
+(E) Aplicação / UDP→IP
+\end{questao}
+
+\begin{questao}{✏️ Q3 --- Conceitual: Invariante MAC/IP}
+Explique o \textbf{invariante de endereçamento} do cenário 6.7:
+\begin{enumerate}[label=(\alph*)]
+    \item Por que o endereço IP de origem e destino permanece constante ao longo de todo o trajeto (fim-a-fim)?
+    \item Por que o endereço MAC de origem e destino muda a cada salto (roteador)?
+    \item Qual é o papel do ARP nesse processo a cada novo segmento de rede?
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q4 --- Associação: Gerações Celulares}
+Associe cada geração à sua técnica de acesso, serviço característico e década:
+
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{Geração} & \textbf{Técnica de Acesso} & \textbf{Serviço principal} & \textbf{Década} \\
+\midrule
+1G & (~~~~) & (~~~~) & (~~~~) \\
+2G & (~~~~) & (~~~~) & (~~~~) \\
+3G & (~~~~) & (~~~~) & (~~~~) \\
+4G & (~~~~) & (~~~~) & (~~~~) \\
+5G & (~~~~) & (~~~~) & (~~~~) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Técnicas:} FDMA, TDMA (GSM), CDMA, OFDM+MIMO, OFDMA+Massive MIMO \\
+\textbf{Serviços:} Voz analógica, SMS/Voz digital, Vídeo/Social, Streaming/IP, AR/VR/IoE \\
+\textbf{Décadas:} 1980s, 1990s, 2000s, 2010s, 2020s
+\end{questao}
+
+\subsection*{Questões de Dificuldade Média (Q5--Q8)}
+
+\begin{questao}{✏️ Q5 --- Ordenação: A Sequência Cronológica do 6.7}
+As etapas abaixo estão \textbf{fora de ordem}. Reordene-as na sequência cronológica correta e justifique \textbf{por que cada etapa precede a seguinte}:
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Rótulo} & \textbf{Etapa} \\
+\midrule
+(E) & TCP SYN enviado ao servidor web \\
+(B) & ARP Request em broadcast para obter MAC do gateway \\
+(G) & HTTP GET enviado ao servidor \\
+(A) & DHCP Discover enviado em broadcast \\
+(D) & DNS Query enviada ao servidor DNS \\
+(C) & Switch auto-aprende o MAC do cliente e encaminha \\
+(F) & TCP SYNACK recebido; ACK enviado \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{questao}
+
+\begin{questao}{✏️ Q6 --- Reuso de Frequências: Cálculo de Capacidade}
+Uma operadora possui uma banda total de \textbf{25\,MHz} para serviço celular. A largura de cada canal de voz é de \textbf{30\,kHz}.
+\begin{enumerate}[label=(\alph*)]
+    \item Quantos canais unidirecionais totais existem? Quantos pares bidirecionais?
+    \item Sem reuso de frequências (rede de célula única cobrindo a cidade inteira): quantas chamadas simultâneas são possíveis?
+    \item Com reuso de frequências em \textbf{250 células}: qual é a capacidade total aproximada e em quantas vezes ela supera o cenário sem reuso?
+    \item Por que o reuso de frequências não causa interferência entre células que usam as mesmas frequências?
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q7 --- Técnicas de Múltiplo Acesso: Comparativo}
+Compare FDMA, TDMA, CDMA e OFDMA nos seguintes aspectos:
+\begin{enumerate}[label=(\alph*)]
+    \item Como o recurso rádio (espectro/tempo) é compartilhado entre usuários em cada técnica?
+    \item O que acontece com a capacidade quando um usuário está \textbf{inativo} (sem dados a enviar) em cada técnica? Qual é mais eficiente nesse aspecto?
+    \item Qual técnica permite que \textbf{todos os usuários transmitam simultaneamente na mesma frequência}? Como a interferência é gerenciada?
+    \item Indique qual geração (1G, 2G, 3G, 4G/5G) usa cada técnica.
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q8 --- Cenário Q4 da Prova-base: /27 + Protocolos}
+Dados: sub-rede LAN~X = \texttt{192.228.17.32/27} (onde está o servidor B = \texttt{192.228.17.57}); sub-rede LAN~Y = \texttt{192.228.17.64/27}; Roteador R1 conecta ambas as LANs à Internet; cliente K na Internet acessa \texttt{http://www.empresa.com} (que resolve para o IP de B).
+\begin{enumerate}[label=(\alph*)]
+    \item Confirme que \texttt{192.228.17.57} pertence à LAN~X. Qual é o endereço de broadcast da LAN~X?
+    \item Monte a tabela de encaminhamento completa de R1 (3 entradas mínimas).
+    \item Descreva a ordem dos protocolos executados do ponto de vista do \textbf{Roteador R1} quando K acessa a página de B.
+    \item Quando R1 recebe o SYN de K destinado a B, quais são os endereços IP de origem/destino e o que acontece com os endereços MAC no quadro que R1 cria para LAN~X?
+\end{enumerate}
+\end{questao}
+
+\subsection*{Questões Difíceis (Q9--Q10)}
+
+\begin{questao}{✏️ Q9 --- Rastreamento Completo do Cenário 6.7}
+Um laptop chega à rede do campus (\texttt{68.80.2.0/24}). O roteador R tem IP \texttt{68.80.2.1} (MAC: \texttt{R1:R1:R1:R1:R1:R1}) e roda DHCP. O laptop recebe IP \texttt{68.80.2.100} (MAC: \texttt{LA:PT:OP:LA:PT:OP}). O DNS da rede tem IP \texttt{68.80.2.253}. O laptop quer acessar \texttt{www.google.com} = \texttt{64.233.169.105} (servidor GWS com MAC: \texttt{GG:OO:OG:LE:GG:LL}).
+\begin{enumerate}[label=(\alph*)]
+    \item Para o passo DHCP: quais são os IPs de origem/destino do datagrama e o MAC de destino do quadro Ethernet?
+    \item Para o passo ARP: o laptop envia o ARP Request. Qual é o \textbf{IP alvo} do request e por quê (não é o IP do servidor Google)?
+    \item Para o passo DNS: preencha os campos do quadro Ethernet e do datagrama IP quando o laptop envia a query DNS:
+
+    \begin{center}
+    \begin{tabular}{ll}
+    \toprule IP src & ?\\ IP dst & ?\\ MAC src & ?\\ MAC dst & ?\\ \bottomrule
+    \end{tabular}
+    \end{center}
+
+    \item Para o passo TCP: o SYN sai do laptop. Quando o SYN chega ao servidor GWS, quais são os IPs de origem/destino e os MACs de origem/destino do quadro Ethernet na \textbf{última} interface de rede antes do GWS?
+    \item Ao longo de todos esses passos, os IPs de origem e destino do datagrama (do laptop para o GWS) mudam? E os MACs? Explique o mecanismo responsável por cada comportamento.
+\end{enumerate}
+\end{questao}
+
+\begin{questao}{✏️ Q10 --- 5G: Profundidade Técnica e Licenciado $\times$ Não-licenciado}
+\begin{enumerate}[label=(\alph*)]
+    \item O 4G usa OFDM e o 5G usa OFDMA. Qual é a diferença fundamental entre as duas técnicas e que vantagem o OFDMA traz para o 5G?
+    \item O 5G utiliza frequências \textbf{mmWave} (ondas milimétricas, acima de 24\,GHz). Qual é a principal limitação física dessas frequências e por que isso exige que as células 5G sejam \textbf{muito mais densas} (menores) do que as células 4G?
+    \item O 5G emprega \textbf{Massive MIMO} com até $\sim$128 antenas na ERB. Que vantagem o Massive MIMO traz em comparação ao MIMO de 4G (até 16 antenas) em termos de: (i) capacidade espacial; (ii) eficiência energética?
+    \item Um provedor quer oferecer serviço 5G URLLC (\textit{Ultra-Reliable Low-Latency Communications}) para controle de fábricas inteligentes. Por que o espectro \textbf{licenciado} é mandatório nesse cenário, e por que o Wi-Fi (espectro não-licenciado) não seria adequado?
+\end{enumerate}
+\end{questao}
+
+% ================================================================
+\clearpage
+
+\begin{center}
+\rule{\textwidth}{2.5pt}\\[8pt]
+{\LARGE\bfseries GABARITO COMENTADO}\\[4pt]
+{\large 6.7 + Redes Móveis: Síntese Integradora}\\[6pt]
+{\small\itshape Consulte apenas após tentar resolver todas as questões acima.}\\[8pt]
+\rule{\textwidth}{2.5pt}
+\end{center}
+\vspace{1em}
+
+% ---- Q1 ----
+\begin{gabaritocaixa}{✅ Gabarito Q1 --- Verdadeiro ou Falso}
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{V.} O DHCP fornece o IP próprio, o IP do gateway \emph{e} o IP do DNS. Sem o IP do gateway, o cliente não saberia para qual IP enviar o ARP Request (passo seguinte).
+    \item \textbf{F.} O ARP Request é um \emph{broadcast local à sub-rede} (MAC destino = \texttt{FF:FF:FF:FF:FF:FF}). O objetivo é descobrir o \textbf{MAC do gateway} (roteador de 1º salto) --- não o MAC do servidor web. O ARP nunca cruza roteadores.
+    \item \textbf{V.} OSPF usa IP diretamente (número de protocolo 89). BGP usa TCP porta 179. Essa distinção aparece em praticamente toda prova de V/F.
+    \item \textbf{F.} O RIP é um protocolo de \textbf{vetor de distâncias} (\textit{distance vector}, Bellman-Ford), roda sobre \textbf{UDP porta~520}. Quem usa \textit{path vector} (anuncia sequência de ASes) é o \textbf{BGP}.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q2 ----
+\begin{gabaritocaixa}{✅ Gabarito Q2 --- Protocolo $\times$ Camada $\times$ Encapsulamento}
+\begin{enumerate}[label=(\arabic*)]
+    \item DHCP $\to$ \textbf{(A)} Aplicação / UDP→IP→Ethernet broadcast (\texttt{255.255.255.255} / \texttt{FF:FF:FF:FF:FF:FF})
+    \item ARP $\to$ \textbf{(B)} Enlace / quadro Ethernet broadcast --- apenas dentro da LAN local; sem UDP/IP
+    \item OSPF $\to$ \textbf{(D)} Rede (controle) / diretamente sobre IP (protocolo~89); sem TCP ou UDP
+    \item BGP $\to$ \textbf{(C)} Rede (controle) / TCP porta~179 --- única exceção entre os protocolos de roteamento que usa transporte confiável
+    \item DNS $\to$ \textbf{(E)} Aplicação / UDP→IP (porta~53); em consultas grandes pode usar TCP
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q3 ----
+\begin{gabaritocaixa}{✅ Gabarito Q3 --- Invariante MAC/IP}
+\begin{enumerate}[label=(\alph*)]
+    \item Os endereços IP identificam os \textbf{endpoints finais} da comunicação (host origem e host destino). São atributos da camada de rede (L3), cujo propósito é justamente fornecer endereçamento global e persistente. Nenhum dispositivo intermediário tem autoridade para alterar os IPs de um datagrama em trânsito (exceto NAT, que é um caso especial com estado).
+    \item Os endereços MAC identificam \textbf{interfaces físicas em um único segmento de enlace} (L2). Quando o datagrama chega a um roteador, o quadro Ethernet é \emph{descartado}: o roteador extrai o datagrama IP, consulta sua tabela de encaminhamento e \emph{cria um novo quadro} com os MACs do segmento seguinte (MAC de origem = interface de saída do roteador; MAC de destino = próximo nó).
+    \item A cada novo segmento, o emissor precisa do MAC do próximo nó. O ARP resolve essa necessidade: envia um broadcast local perguntando ``quem tem esse IP?'' e o dono responde com seu MAC. O resultado é registrado na tabela ARP local para evitar broadcasts repetidos.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q4 ----
+\begin{gabaritocaixa}{✅ Gabarito Q4 --- Gerações Celulares}
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+\textbf{Geração} & \textbf{Técnica} & \textbf{Serviço} & \textbf{Década} \\
+\midrule
+1G & FDMA & Voz analógica & 1980s \\
+2G & TDMA (GSM) & SMS / Voz digital & 1990s \\
+3G & CDMA & Vídeo / Plataformas sociais & 2000s \\
+4G & OFDM + MIMO (LTE) & Streaming / IP fim-a-fim & 2010s \\
+5G & OFDMA + Massive MIMO & AR/VR / IoE / URLLC & 2020s \\
+\bottomrule
+\end{tabular}
+\end{center}
+\textit{Dica de memorização: a técnica de acesso sempre avança para acomodar mais usuários com mais dados. FDMA→TDMA→CDMA→OFDMA é uma progressão de eficiência espectral crescente.}
+\end{gabaritocaixa}
+
+% ---- Q5 ----
+\begin{gabaritocaixa}{✅ Gabarito Q5 --- Ordenação da Sequência 6.7}
+Ordem correta: \textbf{A → B → C → D → E → F → G}
+
+\begin{enumerate}[label=(\Alph*)]
+    \item \textbf{DHCP Discover}: sem IP, o cliente não pode montar nenhum datagrama IP --- é o primeiro passo obrigatório.
+    \item \textbf{ARP Request}: agora com IP e IP do gateway em mãos, o cliente precisa do \textbf{MAC do gateway} para montar o quadro Ethernet da query DNS.
+    \item \textbf{Switch self-learning}: ao encaminhar o ARP Request (e depois o quadro DNS), o switch aprende o MAC do cliente na porta correta.
+    \item \textbf{DNS Query}: com o MAC do gateway resolvido, o quadro com a query DNS pode ser enviado e roteado até o servidor DNS.
+    \item \textbf{TCP SYN}: com o IP do servidor web em mãos (retornado pelo DNS), o cliente inicia o handshake TCP.
+    \item \textbf{TCP SYNACK + ACK}: completa o handshake; a conexão TCP está estabelecida.
+    \item \textbf{HTTP GET}: só agora, com a conexão TCP pronta, o dado da aplicação é enviado.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q6 ----
+\begin{gabaritocaixa}{✅ Gabarito Q6 --- Reuso de Frequências}
+\begin{enumerate}[label=(\alph*)]
+    \item Canais unidirecionais: $\frac{25\,000\,\text{kHz}}{30\,\text{kHz}} \approx \mathbf{833}$ canais. Pares bidirecionais: $\frac{833}{2} \approx \mathbf{416}$ pares (cada chamada precisa de uplink e downlink).
+    \item Sem reuso (célula única): \textbf{416 chamadas simultâneas} em toda a cidade.
+    \item Com 250 células e reuso:
+    \[416 \times 250 = \mathbf{104\,000 \text{ canais simultâneos}} \approx 125\times \text{ melhor}\]
+    (O fator real depende do fator de reuso $K$; o ganho de $\approx 125\times$ considera interferência entre células co-canal.)
+    \item O reuso funciona porque a potência do sinal decai rapidamente com a distância ($\propto d^{-\alpha}$). Células que compartilham a mesma frequência são posicionadas suficientemente afastadas para que o sinal ``co-canal'' seja percebido apenas como ruído de fundo aceitável, abaixo do limiar de decodificação.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q7 ----
+\begin{gabaritocaixa}{✅ Gabarito Q7 --- Técnicas de Múltiplo Acesso}
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{FDMA}: cada usuário recebe uma faixa de frequência exclusiva e contínua. \textbf{TDMA}: todos usam a mesma frequência, mas em fatias de tempo (\textit{slots}) distintas. \textbf{CDMA}: todos usam \emph{toda a frequência ao mesmo tempo}, separados por códigos matemáticos ortogonais. \textbf{OFDMA}: a banda é dividida em subportadoras ortogonais, alocadas \emph{dinamicamente} a diferentes usuários a cada instante.
+    \item \textbf{FDMA/TDMA}: a faixa/slot do usuário inativo fica \textbf{ociosa e desperdiçada} --- ninguém mais pode usá-la. \textbf{CDMA}: sem transmissão, não há interferência, mas o canal não é reutilizado por outro usuário no mesmo código. \textbf{OFDMA}: as subportadoras liberadas por usuários inativos são \textbf{redistribuídas imediatamente} para outros --- é a técnica mais eficiente nesse aspecto.
+    \item \textbf{CDMA} permite transmissão simultânea na mesma frequência. A interferência é gerenciada por \textbf{códigos ortogonais}: o receptor multiplica o sinal recebido pelo código do emissor de interesse e filtra (integra) o resultado --- os outros sinais somam para zero por ortogonalidade.
+    \item 1G=FDMA, 2G=TDMA (GSM), 3G=CDMA (W-CDMA), 4G=OFDM+MIMO (LTE), 5G=OFDMA+Massive MIMO.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q8 ----
+\begin{gabaritocaixa}{✅ Gabarito Q8 --- Cenário Q4 da Prova-base}
+\begin{enumerate}[label=(\alph*)]
+    \item LAN~X = \texttt{192.228.17.32/27}: faixa \texttt{.33}--\texttt{.62}, broadcast \texttt{192.228.17.63}. Como $.57$ está entre $.33$ e $.62$, \textbf{B pertence à LAN~X}. ✓
+    \item Tabela de encaminhamento de R1:
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Rede destino} & \textbf{Prefixo} & \textbf{Interface} \\
+\midrule
+\texttt{192.228.17.32} & /27 & LAN~X \\
+\texttt{192.228.17.64} & /27 & LAN~Y \\
+\texttt{0.0.0.0} & /0 & Internet (uplink) \\
+\bottomrule
+\end{tabular}
+\end{center}
+    \item Do ponto de vista de R1: (1) recebe o SYN de K vindo pela interface Internet; (2) faz \textit{longest prefix match}: \texttt{.57} casa com \texttt{192.228.17.32/27} $\to$ LAN~X; (3) R1 faz ARP na LAN~X para descobrir o MAC de B (se não estiver em cache); (4) encaminha o SYN para B via LAN~X. O processo se repete para SYNACK (B→K), ACK (K→B), HTTP GET (K→B) e HTTP Reply (B→K).
+    \item IPs no datagrama: IP src = IP de K (ex.: \texttt{200.1.2.3}); IP dst = \texttt{192.228.17.57}. \textbf{Esses IPs não mudam}. No quadro Ethernet que R1 cria para a LAN~X: MAC src = MAC da interface de R1 em LAN~X; MAC dst = MAC de B (\texttt{192.228.17.57}), obtido via ARP. Os MACs são específicos do segmento LAN~X e diferem dos MACs usados no segmento Internet.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q9 ----
+\begin{gabaritocaixa}{✅ Gabarito Q9 --- Rastreamento Completo do Cenário 6.7}
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{DHCP Discover:}
+    IP src = \texttt{0.0.0.0} (cliente sem IP ainda);
+    IP dst = \texttt{255.255.255.255} (broadcast IP);
+    MAC dst = \texttt{FF:FF:FF:FF:FF:FF} (broadcast físico).
+    O roteador R responde com DHCP ACK contendo \{\texttt{68.80.2.100}, GW=\texttt{68.80.2.1}, DNS=\texttt{68.80.2.253}\}.
+
+    \item \textbf{ARP --- IP alvo:} o laptop quer enviar a query DNS, que será encaminhada via roteador. Para isso precisa do MAC do \textbf{gateway} (\texttt{68.80.2.1}), não do servidor Google (\texttt{64.233.169.105}), pois o Google está em outra rede e o ARP é local à sub-rede. O ARP Request pergunta: ``Quem tem \texttt{68.80.2.1}?''.
+
+    \item \textbf{Quadro DNS:}
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+IP src & \texttt{68.80.2.100} (laptop) \\
+IP dst & \texttt{68.80.2.253} (servidor DNS) \\
+MAC src & \texttt{LA:PT:OP:LA:PT:OP} (MAC do laptop) \\
+MAC dst & \texttt{R1:R1:R1:R1:R1:R1} (MAC do gateway) \\
+\bottomrule
+\end{tabular}
+\end{center}
+O MAC destino é o gateway porque o DNS está fora da sub-rede local (ou dentro, mas o quadro sai pela mesma interface do roteador).
+
+    \item \textbf{TCP SYN no último salto antes do GWS:}
+    IP src = \texttt{68.80.2.100} (laptop); IP dst = \texttt{64.233.169.105} (GWS).
+    MAC src = MAC da interface de saída do último roteador antes do GWS;
+    MAC dst = \texttt{GG:OO:OG:LE:GG:LL} (MAC do servidor Google).
+    Os IPs permanecem os mesmos do laptop e do GWS --- apenas os MACs são do segmento local Google.
+
+    \item \textbf{Invariante:} os IPs \textbf{não mudam} porque identificam os endpoints finais (laptop e GWS) e são processados pela camada de rede (L3) em cada roteador apenas para decisão de encaminhamento. Os MACs \textbf{mudam a cada salto} porque são endereços L2, válidos somente em um segmento físico. O mecanismo responsável: a cada roteador, o quadro Ethernet é descartado; o roteador cria um novo quadro com os MACs do próximo segmento, obtidos via ARP.
+\end{enumerate}
+\end{gabaritocaixa}
+
+% ---- Q10 ----
+\begin{gabaritocaixa}{✅ Gabarito Q10 --- 5G: Profundidade Técnica}
+\begin{enumerate}[label=(\alph*)]
+    \item \textbf{OFDM (4G)} divide o canal em subportadoras ortogonais, mas aloca \emph{todas} as subportadoras a um único usuário por vez (ou em blocos rígidos). \textbf{OFDMA (5G)} permite que múltiplos usuários compartilhem as subportadoras \emph{simultaneamente}: a ERB aloca dinamicamente diferentes subportadoras a diferentes UEs no mesmo instante de tempo, maximizando a eficiência espectral e reduzindo latência de acesso.
+
+    \item Frequências mmWave ($>$24\,GHz) têm comprimento de onda milimétrico, o que implica: (i) \textbf{alta atenuação} no espaço livre e obstáculos (paredes, chuva, folhagem bloqueiam o sinal); (ii) \textbf{alcance muito menor} (dezenas a centenas de metros vs.\ km no 4G). Para cobrir a mesma área geográfica com mmWave, é necessário instalar muito mais ERBs (\textit{small cells}) com densidades 10--100$\times$ maiores que o 4G.
+
+    \item Massive MIMO com $\sim$128 antenas oferece: (i) \textbf{beamforming} espacial muito mais preciso (\textit{spatial multiplexing} com dezenas de feixes simultâneos), aumentando a capacidade total do setor proporcionalmente ao número de antenas; (ii) \textbf{maior eficiência energética}: concentra a energia de transmissão exatamente na direção do UE, reduzindo potência irradiada e interferência inter-célula.
+
+    \item URLLC exige latência $<$1\,ms e confiabilidade $>$99{,}999\%. O Wi-Fi (não-licenciado) usa CSMA/CA com colisões e backoff exponencial --- a latência é \textbf{não determinística} e pode variar de ms a dezenas de ms. Em espectro licenciado, a ERB tem controle exclusivo da alocação de recursos: pode garantir \textbf{QoS determinístico} para cada conexão URLLC, sem contenção com outros usuários. Para controle de equipamentos industriais em tempo real, qualquer perda de pacote ou variação de latência pode causar falhas físicas graves --- o espectro não-licenciado não oferece essa garantia.
+\end{enumerate}
+\end{gabaritocaixa}
+
+\end{document}

@@ -9,6 +9,7 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{tabularx}
+\usepackage{colortbl}
 \usepackage{tcolorbox}
 \usepackage{tikz}
 \usepackage{microtype}
@@ -69,6 +70,16 @@
     title=\textbf{\boldmath 💡 Analogia},
     sharp corners=rounded,
     boxrule=0.8pt,
+    fonttitle=\bfseries,
+    coltitle=white
+}
+
+\newtcolorbox{prova}{
+    colback=red!5!white,
+    colframe=red!55!black,
+    title=\textbf{\boldmath 🎯 Cai na Prova},
+    sharp corners=rounded,
+    boxrule=1.0pt,
     fonttitle=\bfseries,
     coltitle=white
 }
